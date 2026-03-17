@@ -279,6 +279,7 @@
     <div class="ticker-wrap">
       <div class="ticker" id="tickerEl"></div>
     </div>
+    <a href="https://buymeacoffee.com/nadavmoskow" target="_blank" rel="noopener" style="color:var(--text4);text-decoration:none;white-space:nowrap;font-size:9px;transition:color .15s" onmouseover="this.style.color='var(--text3)'" onmouseout="this.style.color='var(--text4)'">☕ Support</a>
   </div>
 
   <!-- ROOM CHANGE MODAL -->
@@ -293,6 +294,19 @@
         <button class="btn-p" style="flex:1" onclick="changeRoom()">CONNECT</button>
         <button class="btn-g" onclick="closeRoomModal()">CANCEL</button>
       </div>
+    </div>
+  </div>
+
+  <!-- WELCOME MODAL (first visit) -->
+  <div class="modal-overlay" id="welcomeModal" style="display:none">
+    <div class="modal-card" style="width:380px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--blue);margin-bottom:6px;letter-spacing:.04em">WELCOME TO MLB DRAFT OPS</div>
+      <div style="font-size:10px;color:var(--text2);line-height:1.7;margin-bottom:14px">
+        A <span style="color:var(--text)">draft room</span> keeps your roster, picks, and budget in sync across devices in real time. Share the same room name with your league-mates so everyone sees the same board.
+      </div>
+      <div class="field-label">ROOM NAME</div>
+      <input id="welcomeRoomInput" placeholder="e.g. my-league-2026" style="margin-bottom:12px" onkeydown="if(event.key==='Enter')createRoom()"/>
+      <button class="btn-p" style="width:100%;padding:10px;font-size:11px" onclick="createRoom()">CREATE ROOM</button>
     </div>
   </div>
 
@@ -1626,6 +1640,14 @@ function openRoomModal() {
   document.getElementById('roomInput').focus();
 }
 function closeRoomModal() { document.getElementById('roomModal').style.display = 'none'; }
+function createRoom() {
+  const room = document.getElementById('welcomeRoomInput').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  if (!room) return;
+  localStorage.setItem('mlb_draft_room', room);
+  document.getElementById('welcomeModal').style.display = 'none';
+  const ok = initFirebase(room);
+  if (!ok) localMode();
+}
 function changeRoom() {
   const room = document.getElementById('roomInput').value.trim();
   if (!room) return;
@@ -1638,6 +1660,7 @@ function changeRoom() {
   updateAll();
   const ok = initFirebase(room);
   if (ok) {
+    localStorage.setItem('mlb_draft_room', room);
     statusEl.style.color = 'var(--green)';
     statusEl.textContent = 'Connected to room: ' + room;
     setTimeout(closeRoomModal, 600);
@@ -1652,12 +1675,18 @@ function changeRoom() {
 // INIT — auto-connect Firebase, fall back to local
 // ═══════════════════════════════════════════════════════════════
 updateTicker();
-try {
-  const ok = initFirebase();
-  if (!ok) localMode();
-} catch(e) {
-  console.warn('Auto-connect failed, using local mode:', e);
-  localMode();
+const savedRoom = localStorage.getItem('mlb_draft_room');
+if (savedRoom) {
+  try {
+    const ok = initFirebase(savedRoom);
+    if (!ok) localMode();
+  } catch(e) {
+    console.warn('Auto-connect failed, using local mode:', e);
+    localMode();
+  }
+} else {
+  document.getElementById('welcomeModal').style.display = 'flex';
+  document.getElementById('welcomeRoomInput').focus();
 }
 </script>
 </body>
