@@ -127,6 +127,13 @@
   .gear-item.red:hover{background:var(--red-dark);color:#fca5a5}
   .desk-only{}
 
+  /* TOAST */
+  @keyframes toastIn{0%{opacity:0;transform:translateX(-50%) translateY(20px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+  /* UNDO BTN */
+  .undo-btn{background:none;border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:2px;transition:all .15s}
+  .undo-btn:hover{border-color:var(--red);color:var(--red)}
+
   /* MONEY RAIN */
   @keyframes moneyFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
 
@@ -212,6 +219,12 @@
           <option>ALL</option><option>C</option><option>1B</option><option>2B</option>
           <option>3B</option><option>SS</option><option>OF</option><option>SP</option><option>RP</option>
         </select>
+        <select id="valFilter" onchange="renderPlayers()" style="width:90px">
+          <option value="ALL">ALL $</option><option value="40">$40+</option><option value="25">$25-39</option><option value="15">$15-24</option><option value="1">$1-14</option>
+        </select>
+        <select id="teamFilter" onchange="renderPlayers()" style="width:100px">
+          <option value="ALL">ALL TEAMS</option>
+        </select>
         <span id="availCount" style="color:var(--text4);font-size:10px;margin-left:auto"></span>
       </div>
       <div style="flex:1;display:flex;overflow:hidden;min-height:0" class="inner">
@@ -263,7 +276,6 @@
   <div class="bottombar">
     <span id="statusDot">● READY</span>
     <span style="color:#0f172a">·</span>
-    <span>HR=8 · SV=16 · W=14 · QS=6</span>
     <div class="ticker-wrap">
       <div class="ticker" id="tickerEl"></div>
     </div>
@@ -309,16 +321,24 @@
   <!-- GUT OVERRIDE MODAL -->
   <div class="modal-overlay" id="gutModal" style="display:none">
     <div class="modal-card">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:#fde68a;margin-bottom:8px">🔥 GUT OVERRIDE</div>
-      <div style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.6">Type any player — the engine argues FOR them regardless of value score.</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:#fde68a;margin-bottom:8px">🔥 GUT OVERRIDE ANALYSIS</div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.6">Type any player — get the full case FOR and AGAINST drafting them.</div>
       <input id="gutInput" placeholder="Player name..." style="margin-bottom:10px" onkeydown="if(event.key==='Enter')runGut()"/>
       <div id="gutResult" style="background:#07120f;border:1px solid #065f46;padding:10px;font-size:10px;color:var(--text2);line-height:1.75;min-height:80px;display:none;margin-bottom:10px;white-space:pre-wrap;border-radius:3px;max-height:260px;overflow-y:auto"></div>
+      <div id="gutActions" style="display:none;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+        <input type="number" id="gutBidPrice" min="1" max="260" style="width:60px;padding:5px 8px;font-size:12px" placeholder="$"/>
+        <button class="btn-p" style="font-size:9px;padding:5px 10px" onclick="gutBuy()">I WON THIS</button>
+        <button class="btn-g" style="font-size:9px;padding:5px 10px" onclick="gutOther()">OTHER TEAM</button>
+      </div>
       <div style="display:flex;gap:8px">
         <button class="btn-gut" style="flex:1" onclick="runGut()">ANALYSE</button>
         <button class="btn-g" onclick="closeGut()">CLOSE</button>
       </div>
     </div>
   </div>
+
+  <!-- TOAST -->
+  <div id="toast" style="display:none;position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#064e3b;border:1px solid #065f46;color:#6ee7b7;padding:10px 20px;border-radius:4px;font-size:11px;z-index:200;max-width:90vw;text-align:center"></div>
 
 </div>
 
@@ -470,10 +490,127 @@ const PLAYERS_RAW = [
   {r:273,n:'Cody Bellinger',t:'CHC',p:['OF','1B'],v:18},{r:274,n:'Byron Buxton',t:'MIN',p:['OF'],v:20},
   {r:275,n:'Ian Happ',t:'CHC',p:['OF'],v:18},{r:276,n:'Chris Taylor',t:'LAD',p:['2B','SS','3B','OF'],v:6},
   {r:277,n:'Aroldis Chapman',t:'PIT',p:['RP'],v:8},{r:278,n:'Trevor Megill',t:'MIL',p:['RP'],v:8},
-  {r:279,n:'Erik Swanson',t:'TOR',p:['RP'],v:6},{r:280,n:'Jordan Lyles',t:'KC',p:['SP'],v:4}
+  {r:279,n:'Erik Swanson',t:'TOR',p:['RP'],v:6},{r:280,n:'Jordan Lyles',t:'KC',p:['SP'],v:4},
+  // 2026 Yahoo Top 300 additions
+  {r:281,n:'Nick Kurtz',t:'OAK',p:['1B'],v:40},{r:282,n:'Jackson Chourio',t:'MIL',p:['OF'],v:38},
+  {r:283,n:'Kyle Schwarber',t:'PHI',p:['DH','OF'],v:36},{r:284,n:'Junior Caminero',t:'TB',p:['3B'],v:34},
+  {r:285,n:'James Wood',t:'WSH',p:['OF'],v:32},{r:286,n:'Pete Crow-Armstrong',t:'CHC',p:['OF'],v:30},
+  {r:287,n:'Bryan Woo',t:'SEA',p:['SP'],v:28},{r:288,n:'Brent Rooker',t:'OAK',p:['OF','DH'],v:26},
+  {r:289,n:'Maikel Garcia',t:'KC',p:['3B','SS'],v:24},{r:290,n:'Roman Anthony',t:'BOS',p:['OF'],v:26},
+  {r:291,n:'George Springer',t:'TOR',p:['OF'],v:22},{r:292,n:'Jacob deGrom',t:'TEX',p:['SP'],v:24},
+  {r:293,n:'Brice Turang',t:'MIL',p:['2B'],v:20},{r:294,n:'Cade Smith',t:'CLE',p:['RP'],v:20},
+  {r:295,n:'Sal Stewart',t:'CIN',p:['1B'],v:18},{r:296,n:'Bo Bichette',t:'NYM',p:['SS'],v:22},
+  {r:297,n:'Dylan Crews',t:'WSH',p:['OF'],v:20},{r:298,n:'Oneil Cruz',t:'PIT',p:['OF','SS'],v:22},
+  {r:299,n:'Josh Naylor',t:'SEA',p:['1B'],v:20},{r:300,n:'Jeremy Pena',t:'HOU',p:['SS'],v:20},
+  {r:301,n:'Luke Keaschall',t:'MIN',p:['2B'],v:18},{r:302,n:'Kyle Stowers',t:'MIA',p:['OF'],v:16},
+  {r:303,n:'Ben Rice',t:'NYY',p:['C'],v:18},{r:304,n:'Sonny Gray',t:'BOS',p:['SP'],v:20},
+  {r:305,n:'Jose Altuve',t:'HOU',p:['2B'],v:22},{r:306,n:'Rafael Devers',t:'SF',p:['1B','3B'],v:22},
+  {r:307,n:'Riley Greene',t:'DET',p:['OF'],v:20},{r:308,n:'Daniel Palencia',t:'CHC',p:['RP'],v:16},
+  {r:309,n:'Drew Rasmussen',t:'TB',p:['SP'],v:16},{r:310,n:'Noelvi Marte',t:'CIN',p:['3B'],v:18},
+  {r:311,n:'Eury Perez',t:'MIA',p:['SP'],v:18},{r:312,n:'Jeff Hoffman',t:'TOR',p:['RP'],v:18},
+  {r:313,n:'Matt McLain',t:'CIN',p:['2B','SS'],v:18},{r:314,n:'Jo Adell',t:'LAA',p:['OF'],v:14},
+  {r:315,n:'Brandon Nimmo',t:'TEX',p:['OF'],v:16},{r:316,n:'Alec Bohm',t:'PHI',p:['3B'],v:16},
+  {r:317,n:'Nico Hoerner',t:'CHC',p:['2B'],v:14},{r:318,n:'Michael Busch',t:'CHC',p:['1B'],v:14},
+  {r:319,n:'Jacob Wilson',t:'OAK',p:['SS'],v:14},{r:320,n:'Trevor Story',t:'BOS',p:['SS'],v:14},
+  {r:321,n:'MacKenzie Gore',t:'TEX',p:['SP'],v:14},{r:322,n:'Jorge Polanco',t:'NYM',p:['2B'],v:14},
+  {r:323,n:'Cristopher Sanchez',t:'PHI',p:['SP'],v:24},{r:324,n:'Logan Webb',t:'SF',p:['SP'],v:20},
+  {r:325,n:'Alec Burleson',t:'STL',p:['1B','OF'],v:14},{r:326,n:'Ceddanne Rafaela',t:'BOS',p:['2B','SS'],v:14},
+  {r:327,n:'Griffin Jax',t:'TB',p:['RP'],v:14},{r:328,n:'Ivan Herrera',t:'STL',p:['DH','C'],v:14},
+  {r:329,n:'Bryce Miller',t:'SEA',p:['SP'],v:14},{r:330,n:'Jordan Westburg',t:'BAL',p:['3B','2B'],v:14},
+  {r:331,n:'Bryson Stott',t:'PHI',p:['2B'],v:12},{r:332,n:'Ryan Walker',t:'SF',p:['RP'],v:12},
+  {r:333,n:'Chase Burns',t:'CIN',p:['SP'],v:14},{r:334,n:'Andy Pages',t:'LAD',p:['OF'],v:12},
+  {r:335,n:'Yainer Diaz',t:'HOU',p:['C'],v:12},{r:336,n:'Spencer Schwellenbach',t:'ATL',p:['SP'],v:12},
+  {r:337,n:'Matt Wallner',t:'MIN',p:['OF'],v:12},{r:338,n:'Jung Hoo Lee',t:'SF',p:['OF'],v:12},
+  {r:339,n:'JJ Wetherholt',t:'STL',p:['SS'],v:10},{r:340,n:'Bubba Chandler',t:'PIT',p:['SP'],v:10}
 ];
 
 const PLAYERS = Array.from(new Map(PLAYERS_RAW.map(p=>[p.n,p])).values());
+
+// 2026 Updates: teams, values, rankings, flags (source: Yahoo 2026 Top 300)
+(function updatePlayerData() {
+  // Team changes for 2026 season
+  const teamFixes = {
+    'Juan Soto':'NYM','Cody Bellinger':'NYY','Blake Snell':'LAD','Andrés Giménez':'TOR',
+    'Kyle Tucker':'LAD','Nolan Arenado':'ARI','Pete Alonso':'BAL','Marcus Semien':'NYM',
+    'Ryan Helsley':'BAL','Edwin Díaz':'LAD','Mason Miller':'SD','Jhoan Duran':'PHI',
+    'Devin Williams':'NYM','Dylan Cease':'TOR','Framber Valdez':'DET','Alex Bregman':'CHC',
+    'Isaac Paredes':'HOU','Luis Robert Jr.':'NYM','Carlos Correa':'HOU','Josh Lowe':'LAA',
+    "Tyler O'Neill":'BAL','Adolis Garcia':'PHI','Jorge Soler':'LAA','Pete Fairbanks':'MIA',
+    'Kirby Yates':'LAA','Raisel Iglesias':'ATL','Robert Suarez':'ATL','Clay Holmes':'NYM',
+    'Kenley Jansen':'DET','Carlos Estévez':'KC','David Bednar':'NYY','Freddy Peralta':'NYM',
+    'Ranger Suárez':'BOS','Nick Pivetta':'SD','Willson Contreras':'BOS','Brendan Donovan':'SEA',
+    'Jake Burger':'TEX','Luis Arraez':'SF','Jonathan India':'KC','Nick Martinez':'TB',
+    'Josh Bell':'MIN','Eugenio Suárez':'CIN','Aroldis Chapman':'BOS',
+    'Reynaldo López':'ATL'
+  };
+  PLAYERS.forEach(p => { if(teamFixes[p.n]) p.t = teamFixes[p.n]; });
+
+  // Position fixes for 2026
+  const posFixes = {
+    'Clay Holmes':['SP'],'Reynaldo López':['SP'],'Tyler Soderstrom':['1B','DH'],
+    'Brett Baty':['2B'],'Willson Contreras':['1B'],'Mookie Betts':['SS','OF']
+  };
+  PLAYERS.forEach(p => { if(posFixes[p.n]) p.p = posFixes[p.n]; });
+
+  const flagMap = {
+    'Aaron Judge':['elite-floor'],'Jose Ramirez':['elite-floor'],'Freddie Freeman':['elite-floor'],
+    'Mookie Betts':['elite-floor'],'Emmanuel Clase':['elite-floor'],'Tarik Skubal':['elite-floor'],
+    'Bobby Witt Jr.':['elite-floor'],'Juan Soto':['elite-floor'],
+    'Ronald Acuña Jr.':['injury-risk'],'Mike Trout':['injury-risk'],
+    'Spencer Strider':['injury-risk'],'Luis Robert Jr.':['injury-risk'],'Tyler Glasnow':['injury-risk'],
+    'Byron Buxton':['injury-risk'],'Shane McClanahan':['injury-risk'],'Royce Lewis':['injury-risk'],
+    'Jarren Duran':['breakout'],'Chris Sale':['regression'],'Jurickson Profar':['regression'],
+    'Corbin Carroll':['breakout'],'Gunnar Henderson':['breakout'],'Michael Harris II':['breakout'],
+    'Jackson Merrill':['breakout'],'Colton Cowser':['breakout'],'Jackson Holliday':['breakout'],
+    'Jackson Chourio':['breakout'],'James Wood':['breakout'],'Roman Anthony':['breakout'],
+    'Riley Greene':['breakout'],'Pete Crow-Armstrong':['breakout']
+  };
+  PLAYERS.forEach(p => { p.flags = flagMap[p.n] || []; });
+
+  PLAYERS.forEach(p => {
+    const isRP = p.p.includes('RP') && !p.p.includes('SP');
+    const isSP = p.p.includes('SP') && !p.p.includes('RP');
+    if(isSP) p.v = Math.max(3, Math.round(p.v * 0.65));
+    else if(isRP) p.v = Math.max(3, Math.round(p.v * 0.85));
+    else p.v = Math.max(3, Math.round(p.v * 0.75));
+  });
+
+  // Value overrides based on Yahoo 2026 Top 300 rankings
+  const valOverrides = {
+    'Aaron Judge':55,'Shohei Ohtani':54,'Bobby Witt Jr.':50,'Ronald Acuña Jr.':48,
+    'Juan Soto':47,'Jose Ramirez':46,'Tarik Skubal':42,'Julio Rodríguez':44,
+    'Vladimir Guerrero Jr.':40,'Kyle Tucker':43,'Paul Skenes':38,'Gunnar Henderson':40,
+    'Elly De La Cruz':39,'Corbin Carroll':38,'Fernando Tatis Jr.':37,'Nick Kurtz':35,
+    'Pete Alonso':34,'Zach Neto':33,'Garrett Crochet':32,'Jackson Chourio':34,
+    'Kyle Schwarber':33,'Junior Caminero':32,'Logan Gilbert':30,'Trea Turner':32,
+    'Francisco Lindor':31,'Yordan Alvarez':30,'Cristopher Sanchez':28,'James Wood':30,
+    'Ketel Marte':29,'Yoshinobu Yamamoto':28,'Austin Riley':28,'CJ Abrams':28,
+    'Michael Harris II':28,'Pete Crow-Armstrong':27,'Cal Raleigh':27,'Bryan Woo':26,
+    'Freddie Freeman':26,'Bryce Harper':26,'Jarren Duran':26,'Jazz Chisholm Jr.':26,
+    'Mason Miller':28,'Max Fried':25,'Brent Rooker':25,'Maikel Garcia':24,
+    'Manny Machado':24,'George Kirby':24,'Wyatt Langford':24,'Roman Anthony':24,
+    'Edwin Díaz':26,'Jackson Merrill':23,'Cody Bellinger':22,'George Springer':22,
+    'Jacob deGrom':22,'Mookie Betts':22,'Brice Turang':21,'Cade Smith':22,
+    'Chris Sale':20,'Framber Valdez':20,'Bo Bichette':21,'Hunter Brown':20,
+    'Jhoan Duran':22,'Joe Ryan':20,'Dylan Crews':21,'Logan Webb':20,
+    'Dylan Cease':19,'Devin Williams':22,'Luis Robert Jr.':20,'Cole Ragans':20,
+    'Tyler Soderstrom':20,'Oneil Cruz':20,'Matt Olson':20,'Corey Seager':20,
+    'Andrés Muñoz':22,'Josh Naylor':20,'Seiya Suzuki':19,'Jeremy Pena':19,
+    'Jacob Misiorowski':18,'Zack Wheeler':18,'Josh Hader':20,'Adley Rutschman':18,
+    'Ryan Helsley':22,'Emmanuel Clase':22,'Sonny Gray':18,'Jose Altuve':18,
+    'Rafael Devers':18,'Riley Greene':18,'Kyle Bradish':18,'David Bednar':20,
+    'Christian Yelich':17,'Bryan Reynolds':17,'Shota Imanaga':16,'Willy Adames':16,
+    'Ian Happ':16,'Steven Kwan':16,'Tanner Bibee':16,'Nick Pivetta':16,
+    'Ranger Suárez':16,'Freddy Peralta':16,'Kevin Gausman':16,'Blake Snell':16,
+    'Tyler Glasnow':15,'Shane McClanahan':15,'Spencer Strider':15
+  };
+  PLAYERS.forEach(p => { if(valOverrides[p.n] !== undefined) p.v = valOverrides[p.n]; });
+
+  PLAYERS.sort((a,b) => b.v - a.v || a.n.localeCompare(b.n));
+  PLAYERS.forEach((p,i) => { p.r = i + 1; });
+})();
+
+function hasFlag(p, flag) { return p.flags && p.flags.includes(flag); }
 
 // ═══════════════════════════════════════════════════════════════
 // ROSTER SLOTS
@@ -625,6 +762,25 @@ function findSlot(player) {
 
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
 
+function normalizeName(s) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\b(jr|sr|ii|iii|iv)\b\.?/gi,'').replace(/\s+/g,' ').trim().toLowerCase();
+}
+
+function fuzzyFind(query) {
+  if (!query) return null;
+  const q = normalizeName(query);
+  let best = null, bestScore = 0;
+  for (const p of PLAYERS) {
+    const n = normalizeName(p.n);
+    if (n === q) return p;
+    if (n.includes(q) || q.includes(n)) { const sc = q.length / n.length; if (sc > bestScore) { bestScore = sc; best = p; } }
+    const parts = q.split(' ');
+    if (parts.length > 1 && parts.every(w => n.includes(w))) return p;
+    if (parts.length === 1 && n.split(' ').some(w => w.startsWith(q))) { if (0.5 > bestScore) { bestScore = 0.5; best = p; } }
+  }
+  return best;
+}
+
 function getBadge(pos) {
   if (pos.includes('SP')) return { bg: 'var(--sp-bg)', col: 'var(--sp-col)' };
   if (pos.includes('RP')) return { bg: 'var(--rp-bg)', col: 'var(--rp-col)' };
@@ -641,16 +797,22 @@ function calcInflation() {
 }
 
 function getInsight(p) {
-  if (p.p.includes('RP') && p.v >= 28) return 'Elite closer. SV=16 is the highest-scoring pitching stat — a 35-save season is 560 points from saves alone. Top priority.';
-  if (p.p.includes('RP')) return 'Closer with save upside. SV=16 scoring means even 25 saves adds massive pts. Worth a premium over non-closers.';
-  if (p.p.includes('C') && p.v >= 30) return 'Premium catcher — C is the scarcest position in auction. Letting rivals grab elite Cs early is a season-long handicap.';
-  if (p.p.includes('C')) return 'Viable C with upside. Positional scarcity gives floor value. Lock in before the C run happens.';
-  if (p.p.includes('OF') && p.v >= 50) return 'Elite OF power bat. HR=8 means a 40-HR season = 320 points from HRs alone. Pay up here.';
-  if (p.p.includes('OF') && p.v >= 30) return 'Strong OF. Good HR upside in this scoring system. Check K rate — K=-1 eats into value for strikeout-prone bats.';
-  if (p.p.includes('SP') && p.v >= 28) return 'Ace-tier SP. W=14 is huge — a 15-win season = 210 pts from Ws alone. But SPs carry injury risk; adjust bid accordingly.';
-  if (p.p.includes('SP')) return 'Mid-tier SP. Streaming is viable (3 adds/wk) so only pay fair value. Do not overpay — SP supply exceeds demand in deep drafts.';
-  if (p.p.includes('SS') && p.v >= 35) return 'Elite SS — positional scarcity plus dual eligibility adds roster flexibility. Top-tier value.';
-  return 'Solid contributor. Fills a roster need at fair value. Trust the score and do not overpay chasing upside.';
+  let base = '';
+  if (p.p.includes('RP') && p.v >= 28) base = 'Elite closer. SV=16 is the highest-scoring pitching stat — a 35-save season is 560 points from saves alone. Top priority.';
+  else if (p.p.includes('RP')) base = 'Closer with save upside. SV=16 scoring means even 25 saves adds massive pts. Worth a premium over non-closers.';
+  else if (p.p.includes('C') && p.v >= 30) base = 'Premium catcher — C is the scarcest position in auction. Letting rivals grab elite Cs early is a season-long handicap.';
+  else if (p.p.includes('C')) base = 'Viable C with upside. Positional scarcity gives floor value. Lock in before the C run happens.';
+  else if (p.p.includes('OF') && p.v >= 40) base = 'Elite OF power bat. HR=8 means a 40-HR season = 320 points from HRs alone. Pay up here.';
+  else if (p.p.includes('OF') && p.v >= 25) base = 'Strong OF. Good HR upside in this scoring system. Check K rate — K=-1 eats into value for strikeout-prone bats.';
+  else if (p.p.includes('SP') && p.v >= 25) base = 'Ace-tier SP. W=14 is huge — a 15-win season = 210 pts from Ws alone. But SPs carry injury risk; adjust bid accordingly.';
+  else if (p.p.includes('SP')) base = 'Mid-tier SP. Streaming is viable (3 adds/wk) so only pay fair value. Do not overpay — SP supply exceeds demand in deep drafts.';
+  else if (p.p.includes('SS') && p.v >= 30) base = 'Elite SS — positional scarcity plus dual eligibility adds roster flexibility. Top-tier value.';
+  else base = 'Solid contributor. Fills a roster need at fair value. Trust the score and do not overpay chasing upside.';
+  if (hasFlag(p,'injury-risk')) base += ' ⚠ INJURY RISK — factor into bid ceiling.';
+  if (hasFlag(p,'regression')) base += ' ⚠ REGRESSION CANDIDATE — 2024 stats may not repeat. Bid conservatively.';
+  if (hasFlag(p,'breakout')) base += ' 🔥 BREAKOUT — upside play, could outperform projections.';
+  if (hasFlag(p,'elite-floor')) base += ' ✓ ELITE FLOOR — safe pick with top-tier consistency.';
+  return base;
 }
 
 function valueTag(p, adjV) {
@@ -663,6 +825,27 @@ function valueTag(p, adjV) {
 // ═══════════════════════════════════════════════════════════════
 // RULES ENGINE
 // ═══════════════════════════════════════════════════════════════
+let _recCache = [];
+
+function calcNeedUrgency(p) {
+  const needC = !state.roster[0];
+  const needSP = [12,13,14].filter(i=>!state.roster[i]).length;
+  const needRP = [15,16].filter(i=>!state.roster[i]).length;
+  const needOF = [6,7,8,9].filter(i=>!state.roster[i]).length;
+  const need1B = !state.roster[1]; const need2B = !state.roster[2];
+  const need3B = !state.roster[3]; const needSS = !state.roster[4];
+  let u = 0;
+  if (needC && p.p.includes('C')) u = Math.max(u, 0.9);
+  if (needSS && p.p.includes('SS')) u = Math.max(u, 0.7);
+  if (needRP > 0 && p.p.includes('RP')) u = Math.max(u, 0.6 + needRP * 0.1);
+  if (needOF > 0 && p.p.includes('OF')) u = Math.max(u, 0.3 + needOF * 0.1);
+  if (need1B && p.p.includes('1B')) u = Math.max(u, 0.5);
+  if (need2B && p.p.includes('2B')) u = Math.max(u, 0.5);
+  if (need3B && p.p.includes('3B')) u = Math.max(u, 0.5);
+  if (needSP > 0 && p.p.includes('SP')) u = Math.max(u, 0.3 + needSP * 0.05);
+  return Math.min(1, u);
+}
+
 function runRecs() {
   const avail = available();
   const b = budget();
@@ -675,10 +858,20 @@ function runRecs() {
   const needSP = [12,13,14].filter(i=>!state.roster[i]).length;
   const needRP = [15,16].filter(i=>!state.roster[i]).length;
   const needOF = [6,7,8,9].filter(i=>!state.roster[i]).length;
-  const need1B = !state.roster[1];
-  const need2B = !state.roster[2];
-  const need3B = !state.roster[3];
-  const needSS = !state.roster[4];
+  const need1B = !state.roster[1]; const need2B = !state.roster[2];
+  const need3B = !state.roster[3]; const needSS = !state.roster[4];
+
+  function countQuality(pos, minV) { return avail.filter(p => p.p.includes(pos) && p.v >= minV).length; }
+  const scarcity = {
+    C: Math.max(0, 8 - countQuality('C', 12)), SS: Math.max(0, 8 - countQuality('SS', 15)),
+    RP: Math.max(0, 6 - countQuality('RP', 15)), SP: Math.max(0, 5 - countQuality('SP', 15)),
+    OF: Math.max(0, 4 - countQuality('OF', 18)),
+    '1B': Math.max(0, 5 - countQuality('1B', 14)), '2B': Math.max(0, 5 - countQuality('2B', 14)), '3B': Math.max(0, 5 - countQuality('3B', 14))
+  };
+
+  const last5 = state.drafted.slice(-5).filter(Boolean);
+  const posRuns = {};
+  last5.forEach(d => { (d.p||[]).forEach(pos => { posRuns[pos] = (posRuns[pos]||0) + 1; }); });
 
   function score(p) {
     const adjV = Math.round(p.v * inflMult);
@@ -692,127 +885,189 @@ function runRecs() {
     if (need2B && p.p.includes('2B')) s += 8;
     if (need3B && p.p.includes('3B')) s += 8;
     if (needSS && p.p.includes('SS')) s += 12;
-    if (p.p.includes('RP') && p.v >= 28) s += 15;
-    if (p.p.includes('OF') && p.v >= 40) s += 10;
-    if (p.p.includes('SP') && p.v >= 22) s -= 5;
-    if (adjV > b * 0.4) s -= 15;
+    p.p.forEach(pos => { if (scarcity[pos]) s += scarcity[pos] * 2; });
+    if (adjV > avgBid * 2.5) s -= 15;
+    else if (adjV < avgBid * 0.6) s += 8;
+    p.p.forEach(pos => { if (posRuns[pos] >= 2) s += 6; });
+    if (p.p.includes('RP') && p.v >= 25) s += 15;
+    if (hasFlag(p, 'elite-floor')) s += 5;
+    if (p.p.includes('SP') && p.v < 20) s -= 5;
     return { player: p, score: s, adjV };
   }
 
-  const scored = avail.map(score).sort((a,b) => b.score - a.score);
-  const top = scored[0];
-  const backs = scored.slice(1, 4);
+  const scored = avail.map(score).filter(s => s.score > -99).sort((a,b) => b.score - a.score);
+  const top3 = scored.slice(0, 3);
+  _recCache = top3;
 
-  // Market note
-  const overpays = state.drafted.filter(d => d && d.price > d.v * 1.2).length;
-  const steals = state.drafted.filter(d => d && d.price < d.v * 0.85).length;
-  let mkt = '';
-  if (overpays >= 3) mkt = `INFLATION RUNNING HOT — ${overpays} players went 20%+ over value. Tighten bids, let rivals overbid.`;
-  else if (steals >= 2) mkt = `COLD MARKET — ${steals} recent steals below value. Be aggressive on your targets.`;
-  else if (state.drafted.length < 5) mkt = 'Early draft — let big names go over value. Strike in the middle rounds when inflation cools.';
-  else mkt = 'Market reading normal. Watch for position runs — act decisively when your need tier opens.';
+  if (!top3.length) {
+    document.getElementById('recsOutput').innerHTML = '<div class="rec-box"><div class="rec-title">STATUS</div><div class="rec-body">Roster near complete or budget depleted. Review your roster tab.</div></div>';
+    return;
+  }
 
-  // Needs list
+  function getFor(p) {
+    const r = [];
+    if (needC && p.p.includes('C')) r.push('fills critical C need');
+    if (needSS && p.p.includes('SS')) r.push('fills SS need');
+    if (needRP > 0 && p.p.includes('RP')) r.push('SV=16 is highest scoring stat');
+    if (needOF > 0 && p.p.includes('OF')) r.push('fills OF slot');
+    if (need1B && p.p.includes('1B')) r.push('fills 1B need');
+    if (need2B && p.p.includes('2B')) r.push('fills 2B need');
+    if (need3B && p.p.includes('3B')) r.push('fills 3B need');
+    if (hasFlag(p, 'elite-floor')) r.push('elite floor — safe pick');
+    if (hasFlag(p, 'breakout')) r.push('breakout upside');
+    if (p.v >= 35) r.push('top-tier talent');
+    p.p.forEach(pos => { if (scarcity[pos] >= 4) r.push(pos + ' supply drying up'); });
+    return r.length ? r.slice(0,3).join(' · ') : 'solid value at current price';
+  }
+
+  function getAgainst(rec) {
+    const p = rec.player; const r = [];
+    if (hasFlag(p, 'injury-risk')) r.push('injury risk');
+    if (hasFlag(p, 'regression')) r.push('regression candidate');
+    if (rec.adjV > avgBid * 2) r.push('costs ' + Math.round(rec.adjV / avgBid) + 'x avg slot');
+    if (p.p.includes('SP') && p.v < 20) r.push('SP streamable via waivers');
+    const allFilled = p.p.every(pos => {
+      if (pos === 'C') return !needC; if (pos === 'OF') return needOF === 0;
+      if (pos === 'SP') return needSP === 0; if (pos === 'RP') return needRP === 0;
+      if (pos === '1B') return !need1B; if (pos === '2B') return !need2B;
+      if (pos === '3B') return !need3B; if (pos === 'SS') return !needSS;
+      return false;
+    });
+    if (allFilled) r.push('no pressing positional need');
+    return r.length ? r.slice(0,3).join(' · ') : 'no major concerns';
+  }
+
+  const drafted = state.drafted.filter(Boolean);
+  const overpays = drafted.filter(d => d.price > d.v * 1.2).length;
+  const steals = drafted.filter(d => d.price < d.v * 0.85).length;
+  const avgOverpay = drafted.length >= 3 ? Math.round(drafted.reduce((s,d) => s + ((d.price - d.v) / d.v) * 100, 0) / drafted.length) : 0;
+  const totalSpentAll = drafted.reduce((s,d) => s + d.price, 0) + state.spent;
+  const spendRate = drafted.length >= 3 ? Math.round(totalSpentAll / (drafted.length + filledSlots())) : 0;
+  const rivalBudgetEst = drafted.length >= 3 ? Math.round((260 * 12 - totalSpentAll) / 11) : 260;
+
+  let mktLines = [];
+  if (drafted.length >= 3) {
+    mktLines.push('Avg overpay: <b>' + (avgOverpay > 0 ? '+' : '') + avgOverpay + '%</b> across ' + drafted.length + ' picks');
+    if (spendRate) mktLines.push('Spend rate: ~$' + spendRate + '/pick');
+    mktLines.push('Est. rival budget remaining: ~$' + rivalBudgetEst);
+    Object.entries(posRuns).filter(([,c]) => c >= 2).forEach(([pos,c]) => {
+      const posAvg = last5.filter(d => (d.p||[]).includes(pos));
+      const avgP = posAvg.length ? Math.round(posAvg.reduce((s,d) => s + ((d.price - d.v) / d.v) * 100, 0) / posAvg.length) : 0;
+      mktLines.push('<span style="color:var(--amber)">' + pos + ' run detected (' + c + ' in last 5)</span>' + (avgP > 10 ? ' — going ' + avgP + '% over value' : ''));
+    });
+  }
+  if (overpays >= 3) mktLines.push('<span style="color:var(--red)">INFLATION HOT — tighten bids</span>');
+  else if (steals >= 2) mktLines.push('<span style="color:var(--green)">COLD MARKET — be aggressive</span>');
+  else if (drafted.length < 3) mktLines.push('Early draft — let big names go over value. Strike mid-draft.');
+
+  const filledPositions = new Set();
+  state.roster.filter(Boolean).forEach(r => { r.player.p.forEach(pos => filledPositions.add(pos)); });
+  const drainTargets = avail.filter(p => p.v >= 25 && p.p.some(pos => filledPositions.has(pos))).sort((a,b) => b.v - a.v).slice(0, 3)
+    .map(p => { const fp = p.p.find(pos => filledPositions.has(pos)) || p.p[0]; return '<div style="margin-bottom:4px">→ <span class="rec-player-link" onclick="openPlayerModal(\'' + escHtml(p.n) + '\')">' + p.n + '</span> ($' + p.v + ' ' + fp + ') — your ' + fp + ' is filled, rivals must bid up</div>'; });
+  const genericNoms = avail.filter(p => p.v >= 30 && p.p.some(x => ['OF','SS','C'].includes(x))).slice(0, 3)
+    .map(p => '<div style="margin-bottom:4px">→ <span class="rec-player-link" onclick="openPlayerModal(\'' + escHtml(p.n) + '\')">' + p.n + '</span> ($' + p.v + ') — force rivals to pay up</div>');
+  const nomHtml = drainTargets.length ? drainTargets.join('') : genericNoms.length ? genericNoms.join('') : 'Hold noms — let others nominate expensive players first.';
+
   const needs = [];
   if (needC) needs.push({ label: 'CATCHER', urgent: true, note: 'scarcest position — act before C run' });
   if (needSS) needs.push({ label: 'SHORTSTOP', urgent: false, note: 'positional depth thins fast' });
-  if (needRP >= 2) needs.push({ label: `RP x${needRP}`, urgent: false, note: 'SV=16 is your highest scoring stat' });
-  if (needSP >= 2) needs.push({ label: `SP x${needSP}`, urgent: false, note: 'stream the rest via waivers' });
-  if (needOF >= 3) needs.push({ label: `OF x${needOF}`, urgent: false, note: 'target HR bats' });
+  if (needRP >= 2) needs.push({ label: 'RP x' + needRP, urgent: false, note: 'SV=16 is your highest scoring stat' });
+  if (needSP >= 2) needs.push({ label: 'SP x' + needSP, urgent: false, note: 'stream the rest via waivers' });
+  if (needOF >= 3) needs.push({ label: 'OF x' + needOF, urgent: false, note: 'target HR bats' });
   if (need1B) needs.push({ label: '1B', urgent: false, note: '' });
   if (need2B) needs.push({ label: '2B', urgent: false, note: '' });
   if (need3B) needs.push({ label: '3B', urgent: false, note: '' });
 
-  // Nom suggestions — players worth nominating to drain rival budgets
-  const nomSuggestions = avail
-    .filter(p => p.v >= 32 && p.p.some(x => ['OF','SS','C'].includes(x)))
-    .slice(0, 3)
-    .map(p => `${p.n} ($${p.v}) — nominate to force rivals to pay up or pass`);
+  document.getElementById('recsOutput').innerHTML =
+    '<div style="font-size:9px;color:var(--text4);letter-spacing:.12em;margin-bottom:8px">TOP 3 RECOMMENDATIONS</div>' +
+    top3.map(function(rec, idx) {
+      var p = rec.player, bg = getBadge(p.p);
+      var safeBadge = hasFlag(p, 'elite-floor') ? ' <span style="background:#064e3b;color:#6ee7b7;padding:1px 5px;font-size:8px;font-weight:700">[SAFE]</span>' : '';
+      return '<div class="rec-box" style="position:relative">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+          '<span style="color:var(--blue);font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900">' + (idx+1) + '</span>' +
+          '<div style="flex:1">' +
+            '<span class="rec-player-link rec-highlight" onclick="openPlayerModal(\'' + escHtml(p.n) + '\')">' + p.n + '</span>' + safeBadge +
+            ' <span style="color:var(--text3);font-size:10px">' + p.t + ' · ' + p.p.join('/') + ' · #' + p.r + '</span>' +
+          '</div>' +
+          '<span class="badge" style="background:' + bg.bg + ';color:' + bg.col + '">' + p.p[0] + '</span>' +
+          '<span style="color:var(--amber);font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700">$' + p.v + '</span>' +
+          valueTag(p, rec.adjV) +
+        '</div>' +
+        '<div style="color:#6ee7b7;font-size:10px;line-height:1.6;margin-bottom:4px"><b>FOR:</b> ' + getFor(p) + '</div>' +
+        '<div style="color:#fca5a5;font-size:10px;line-height:1.6;margin-bottom:8px"><b>AGAINST:</b> ' + getAgainst(rec) + '</div>' +
+        '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">' +
+          '<input type="number" id="recBid' + idx + '" min="1" max="' + b + '" value="' + p.v + '" style="width:60px;padding:5px 8px;font-size:12px" oninput="document.getElementById(\'recLbl' + idx + '\').textContent=this.value||' + p.v + '"/>' +
+          '<button class="btn-p" style="font-size:9px;padding:5px 10px" onclick="recBuy(' + idx + ')">I WON $<span id="recLbl' + idx + '">' + p.v + '</span></button>' +
+          '<button class="btn-g" style="font-size:9px;padding:5px 10px" onclick="recOther(' + idx + ')">OTHER TEAM</button>' +
+        '</div>' +
+      '</div>';
+    }).join('') +
 
-  if (!top || top.score < 0) {
-    document.getElementById('recsOutput').innerHTML =
-      `<div class="rec-box"><div class="rec-title">STATUS</div><div class="rec-body">Roster near complete or budget depleted. Review your roster tab.</div></div>`;
-    return;
-  }
+    '<div class="rec-box"><div class="rec-title">🏠 TEAM NEEDS</div><div class="rec-body">' +
+      (needs.length ? needs.map(function(n,i) { return '<div style="margin-bottom:4px"><span style="color:' + (i===0?'#ef4444':i===1?'#f59e0b':'var(--text2)') + '">' + (i+1) + '. ' + n.label + '</span>' + (n.note ? ' <span style="color:var(--text3);font-size:10px">— ' + n.note + '</span>' : '') + '</div>'; }).join('') : '<span style="color:var(--green)">Team balanced — target BPA</span>') +
+    '</div>' +
+    '<div class="rec-body" style="margin-top:8px;padding-top:8px;border-top:1px solid #1e293b">Budget: <span style="color:' + (budget()<40?'var(--red)':budget()<80?'var(--amber)':'var(--green)') + '">$' + budget() + '</span> · ' + slotsLeft() + ' slots · avg <span style="color:' + (avgBid<3?'var(--red)':'var(--text2)') + '">$' + avgBid + '/slot</span>' + (avgBid < 3 ? ' ⚠ BUDGET DANGER' : '') + '</div></div>' +
 
-  const vc = (() => {
-    const r = (top.adjV - top.player.v) / top.player.v;
-    if (r > 0.15) return `INFLATED — fair value $${top.player.v}, inflation pushing to ~$${top.adjV}. Consider passing.`;
-    if (r < -0.1) return `SNIPE — available below fair value (~$${top.adjV}). Pull the trigger.`;
-    return `BUY — at $${top.adjV} or under this is solid value for your roster.`;
-  })();
+    '<div class="rec-box"><div class="rec-title">📊 MARKET TRENDS</div><div class="rec-body">' +
+      (mktLines.length ? mktLines.map(function(l) { return '<div style="margin-bottom:4px">' + l + '</div>'; }).join('') : 'Need 3+ picks to analyze market.') +
+    '</div></div>' +
 
-  document.getElementById('recsOutput').innerHTML = `
-    <div class="rec-box">
-      <div class="rec-title">🎯 BEST TARGET</div>
-      <div class="rec-highlight"><span class="rec-player-link" onclick="openPlayerModal('${escHtml(top.player.n)}')">${top.player.n}</span> <span style="color:var(--text2);font-size:11px;font-weight:400">${top.player.t} · ${top.player.p.join('/')}</span></div>
-      <div class="rec-body" style="margin-top:6px">
-        Fair value: <span style="color:var(--amber);font-weight:700">$${top.player.v}</span>
-        &nbsp;·&nbsp; Adj bid: <span style="color:var(--amber);font-weight:700">$${top.adjV}</span>
-        &nbsp;·&nbsp; Yahoo #${top.player.r}
-        &nbsp;&nbsp;${valueTag(top.player, top.adjV)}
-      </div>
-      <div class="rec-body" style="margin-top:6px">${getInsight(top.player)}</div>
-    </div>
+    '<div class="rec-box"><div class="rec-title">📌 NOMINATION STRATEGY</div><div class="rec-body">' + nomHtml + '</div></div>';
+}
 
-    <div class="rec-box">
-      <div class="rec-title">📋 BACKUP OPTIONS</div>
-      <div class="rec-body">
-        ${backs.map(b => {
-          const bg = getBadge(b.player.p);
-          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #0f172a">
-            <div style="flex:1">
-              <span class="rec-player-link" style="color:var(--text);font-weight:700" onclick="openPlayerModal('${escHtml(b.player.n)}')">${b.player.n}</span>
-              <span style="color:var(--text3);font-size:9px;margin-left:6px">${b.player.t} · ${b.player.p.join('/')}</span>
-            </div>
-            <span class="badge" style="background:${bg.bg};color:${bg.col}">${b.player.p[0]}</span>
-            <span style="color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700">$${b.player.v}</span>
-            ${valueTag(b.player, b.adjV)}
-          </div>`;
-        }).join('')}
-      </div>
-    </div>
+function recBuy(idx) {
+  var rec = _recCache[idx]; if (!rec) return;
+  var input = document.getElementById('recBid' + idx);
+  var price = parseInt(input ? input.value : 0);
+  if (isNaN(price) || price < 1) return;
+  selPlayer = rec.player;
+  var slot = findSlot(selPlayer);
+  var newRoster = state.roster.slice();
+  if (slot >= 0) newRoster[slot] = { player: selPlayer, price: price };
+  state.roster = newRoster;
+  state.spent += price;
+  saveState(); moneyRain(); showToast(selPlayer, price);
+  selPlayer = null; updateAll(); setTimeout(runRecs, 100);
+}
 
-    <div class="rec-box">
-      <div class="rec-title">💰 VALUE CALL</div>
-      <div class="rec-body">${vc}</div>
-      ${inflation > 8 ? `<div class="rec-body" style="margin-top:6px;color:var(--amber)">INFLATION +${inflation}% detected across ${state.drafted.length} picks. Adjust all targets up ~${Math.round(inflation)}%.</div>` : ''}
-    </div>
-
-    <div class="rec-box">
-      <div class="rec-title">🏠 TEAM NEEDS — PRIORITY ORDER</div>
-      <div class="rec-body">
-        ${needs.length ? needs.map((n,i) => `<div style="margin-bottom:4px"><span style="color:${i===0?'#ef4444':i===1?'#f59e0b':'var(--text2)'}">
-          ${i+1}. ${n.label}</span>${n.note ? ` <span style="color:var(--text3);font-size:10px">— ${n.note}</span>` : ''}</div>`).join('')
-          : '<span style="color:var(--green)">Team balanced — target BPA (best player available)</span>'}
-      </div>
-      <div class="rec-body" style="margin-top:8px;padding-top:8px;border-top:1px solid #1e293b">
-        Budget: <span style="color:${budget()<40?'var(--red)':budget()<80?'var(--amber)':'var(--green)'}">$${budget()}</span>
-        · ${slotsLeft()} slots left
-        · avg <span style="color:${avgBid<3?'var(--red)':'var(--text2)'}">$${avgBid}/slot</span>
-        ${avgBid < 3 ? ' ⚠ BUDGET DANGER' : ''}
-      </div>
-    </div>
-
-    <div class="rec-box">
-      <div class="rec-title">📊 MARKET NOTE</div>
-      <div class="rec-body">${mkt}</div>
-    </div>
-
-    <div class="rec-box">
-      <div class="rec-title">📌 NOMINATION STRATEGY</div>
-      <div class="rec-body">
-        ${nomSuggestions.length
-          ? nomSuggestions.map(s => `<div style="margin-bottom:4px">→ ${s}</div>`).join('')
-          : 'Hold noms — conserve budget, let others nominate expensive players first.'}
-      </div>
-    </div>
-  `;
+function recOther(idx) {
+  var rec = _recCache[idx]; if (!rec) return;
+  var input = document.getElementById('recBid' + idx);
+  var price = parseInt(input ? input.value : 0);
+  if (isNaN(price) || price < 1) return;
+  var p = rec.player;
+  state.drafted = state.drafted.concat([{ n:p.n, t:p.t, p:p.p, v:p.v, r:p.r, price:price }]);
+  saveState(); selPlayer = null; updateAll(); setTimeout(runRecs, 100);
 }
 
 // ═══════════════════════════════════════════════════════════════
 // PLAYER ACTIONS
 // ═══════════════════════════════════════════════════════════════
+function showToast(player, price) {
+  var diff = price - player.v;
+  var avail2 = available();
+  var nextNeed = avail2.length ? avail2[0] : null;
+  var msg = '';
+  if (diff <= 0) msg = 'Solid pick — got ' + player.n + ' at $' + price + ' (saved $' + Math.abs(diff) + ').';
+  else if (diff <= player.v * 0.15) msg = 'Fair price — ' + player.n + ' at $' + price + '. Slight overpay but fills a need.';
+  else msg = 'Overpaid by $' + diff + ' on ' + player.n + ' — need bargains on remaining slots.';
+  if (nextNeed) msg += ' Next: target ' + nextNeed.n + ' ($' + nextNeed.v + ').';
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.animation = 'none'; el.offsetHeight; el.style.animation = 'toastIn .3s ease-out';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
+function undoDraftPick(idx) {
+  var d = state.drafted[idx];
+  if (!d) return;
+  state.drafted = state.drafted.filter(function(_, i) { return i !== idx; });
+  saveState(); updateAll(); setTimeout(runRecs, 100);
+}
+
 function moneyRain() {
   const container = document.createElement('div');
   container.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden';
@@ -838,6 +1093,7 @@ function buyPlayer() {
   state.spent += price;
   saveState();
   moneyRain();
+  showToast(selPlayer, price);
   selPlayer = null;
   closeSide();
   updateAll();
@@ -873,45 +1129,99 @@ function openGut() { document.getElementById('gutModal').style.display = 'flex';
 function closeGut() { document.getElementById('gutModal').style.display = 'none'; document.getElementById('gutResult').style.display = 'none'; }
 function gutFromSide() { if (selPlayer) { document.getElementById('gutInput').value = selPlayer.n; openGut(); runGut(); } }
 
+let _gutPlayer = null;
+
 function runGut() {
   const name = document.getElementById('gutInput').value.trim();
   if (!name) return;
-  const p = PLAYERS.find(x => x.n.toLowerCase().includes(name.toLowerCase()));
+  const p = fuzzyFind(name);
   const el = document.getElementById('gutResult');
   el.style.display = 'block';
-  if (!p) { el.textContent = 'Player not found. Check spelling.'; return; }
+  if (!p) { el.innerHTML = 'Player not found. Check spelling.'; _gutPlayer = null; document.getElementById('gutActions').style.display = 'none'; return; }
+  _gutPlayer = p;
   const b = budget();
   const inflation = calcInflation();
   const adjV = Math.round(p.v * (1 + inflation / 100));
-  const maxBid = Math.min(b, Math.round(p.v * 1.3));
+  const urgency = calcNeedUrgency(p);
+  const maxMult = 1.0 + urgency * 0.5;
+  const maxBid = Math.min(b, Math.round(p.v * maxMult));
   const isGone = getDraftedSet().has(p.n);
+
   const myNeeds = [];
   if (!state.roster[0] && p.p.includes('C')) myNeeds.push('fills C need');
   if ([12,13,14].some(i=>!state.roster[i]) && p.p.includes('SP')) myNeeds.push('fills SP slot');
   if ([15,16].some(i=>!state.roster[i]) && p.p.includes('RP')) myNeeds.push('fills RP slot');
   if ([6,7,8,9].some(i=>!state.roster[i]) && p.p.includes('OF')) myNeeds.push('fills OF slot');
-  const lines = [
-    `GUT OVERRIDE: ${p.n} (${p.t}, ${p.p.join('/')})`,
-    isGone ? '⚠  ALREADY DRAFTED — analysis for reference only' : '',
-    '',
-    `Fair value:    $${p.v}`,
-    `Inflation adj: $${adjV}`,
-    `Max bid:       $${maxBid} (130% fair value)`,
-    '',
-    '--- THE CASE FOR ---',
-    p.p.includes('RP') && p.v >= 25 ? `• Elite closer. SV=16 is the #1 scoring stat. Worth going to $${maxBid}.` : '',
-    p.p.includes('C') && p.v >= 20 ? `• Premium catcher. C scarcity means this hurts rivals all season.` : '',
-    p.p.includes('OF') && p.v >= 40 ? `• Power bat. HR=8 means 40 HRs = 320 pts from HRs alone. Hard to find.` : '',
-    p.p.includes('SP') && p.v >= 28 ? `• Ace-level starter. W=14 is huge — even 13 wins = 182 pts.` : '',
-    myNeeds.length ? `• Roster fit: ${myNeeds.join(', ')}` : '• Gut feel is valid — sometimes the intangibles matter.',
-    p.v >= 35 ? `• Top-tier talent tends to outperform projections. Trust the upside.` : '',
-    '',
-    '--- VERDICT ---',
-    b >= maxBid
-      ? `Budget OK ($${b} available). Pull trigger at $${maxBid} or under.`
-      : `⚠  Budget tight ($${b}). Max safe bid is $${b}. Only go here if it's a must-have.`
-  ].filter(l => l !== null && l !== undefined && l !== false && l !== '');
-  el.textContent = lines.join('\n');
+  if (!state.roster[1] && p.p.includes('1B')) myNeeds.push('fills 1B need');
+  if (!state.roster[2] && p.p.includes('2B')) myNeeds.push('fills 2B need');
+  if (!state.roster[3] && p.p.includes('3B')) myNeeds.push('fills 3B need');
+  if (!state.roster[4] && p.p.includes('SS')) myNeeds.push('fills SS need');
+
+  const caseFor = [];
+  if (p.p.includes('RP') && p.v >= 25) caseFor.push('Elite closer. SV=16 is the #1 scoring stat. Worth going to $' + maxBid + '.');
+  if (p.p.includes('C') && p.v >= 15) caseFor.push('Premium catcher. C scarcity means this hurts rivals all season.');
+  if (p.p.includes('OF') && p.v >= 35) caseFor.push('Power bat. HR=8 means 40 HRs = 320 pts from HRs alone.');
+  if (p.p.includes('SP') && p.v >= 25) caseFor.push('Ace-level starter. W=14 is huge — even 13 wins = 182 pts.');
+  if (hasFlag(p, 'elite-floor')) caseFor.push('Elite floor — one of the safest picks in the draft.');
+  if (hasFlag(p, 'breakout')) caseFor.push('Breakout candidate — could massively outperform price.');
+  if (myNeeds.length) caseFor.push('Roster fit: ' + myNeeds.join(', '));
+  if (!caseFor.length) caseFor.push('Gut feel is valid — sometimes the intangibles matter.');
+  if (p.v >= 35) caseFor.push('Top-tier talent tends to outperform projections.');
+
+  const caseAgainst = [];
+  if (hasFlag(p, 'injury-risk')) caseAgainst.push('Injury risk — history of missing time. Protect with lower bid ceiling.');
+  if (hasFlag(p, 'regression')) caseAgainst.push('Regression candidate — 2024 stats may not repeat in 2025.');
+  if (p.p.includes('SP') && p.v < 20) caseAgainst.push('Streamable position — can find SP production on waivers.');
+  if (maxBid > b * 0.3) caseAgainst.push('Budget impact — $' + maxBid + ' is ' + Math.round(maxBid / b * 100) + '% of remaining budget.');
+  const allFilled = p.p.every(function(pos) {
+    if (pos === 'C') return !!state.roster[0]; if (pos === 'OF') return [6,7,8,9].every(i => state.roster[i]);
+    if (pos === 'SP') return [12,13,14].every(i => state.roster[i]); if (pos === 'RP') return [15,16].every(i => state.roster[i]);
+    if (pos === '1B') return !!state.roster[1]; if (pos === '2B') return !!state.roster[2];
+    if (pos === '3B') return !!state.roster[3]; if (pos === 'SS') return !!state.roster[4]; return false;
+  });
+  if (allFilled) caseAgainst.push('No positional need — luxury pick only.');
+  if (!caseAgainst.length) caseAgainst.push('No major red flags.');
+
+  const urgLabel = urgency >= 0.7 ? 'CRITICAL NEED' : urgency >= 0.4 ? 'MODERATE NEED' : 'LUXURY PICK';
+
+  el.innerHTML =
+    '<b>GUT OVERRIDE ANALYSIS: ' + escHtml(p.n) + '</b> (' + p.t + ', ' + p.p.join('/') + ')\n' +
+    (isGone ? '<span style="color:var(--red)">⚠ ALREADY DRAFTED</span>\n' : '') +
+    '\nFair value:    $' + p.v +
+    '\nInflation adj: $' + adjV +
+    '\nMax bid:       $' + maxBid + ' (' + Math.round(maxMult * 100) + '% — ' + urgLabel + ')' +
+    '\n\n<span style="color:#6ee7b7"><b>--- THE CASE FOR ---</b></span>\n' +
+    caseFor.map(function(l) { return '• ' + l; }).join('\n') +
+    '\n\n<span style="color:#fca5a5"><b>--- THE CASE AGAINST ---</b></span>\n' +
+    caseAgainst.map(function(l) { return '• ' + l; }).join('\n') +
+    '\n\n<b>--- VERDICT ---</b>\n' +
+    (b >= maxBid ? 'Budget OK ($' + b + '). Pull trigger at $' + maxBid + ' or under.' : '⚠ Budget tight ($' + b + '). Max safe bid is $' + b + '.');
+
+  document.getElementById('gutActions').style.display = 'flex';
+  document.getElementById('gutBidPrice').value = p.v;
+}
+
+function gutBuy() {
+  if (!_gutPlayer) return;
+  var price = parseInt(document.getElementById('gutBidPrice').value);
+  if (isNaN(price) || price < 1) return;
+  selPlayer = _gutPlayer;
+  var slot = findSlot(selPlayer);
+  var newRoster = state.roster.slice();
+  if (slot >= 0) newRoster[slot] = { player: selPlayer, price: price };
+  state.roster = newRoster;
+  state.spent += price;
+  saveState(); moneyRain(); showToast(selPlayer, price);
+  _gutPlayer = null; selPlayer = null; closeGut(); updateAll(); setTimeout(runRecs, 100);
+}
+
+function gutOther() {
+  if (!_gutPlayer) return;
+  var price = parseInt(document.getElementById('gutBidPrice').value);
+  if (isNaN(price) || price < 1) return;
+  var p = _gutPlayer;
+  state.drafted = state.drafted.concat([{ n:p.n, t:p.t, p:p.p, v:p.v, r:p.r, price:price }]);
+  saveState(); _gutPlayer = null; closeGut(); updateAll(); setTimeout(runRecs, 100);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -950,6 +1260,7 @@ function buyFromModal() {
   state.spent += price;
   saveState();
   moneyRain();
+  showToast(selPlayer, price);
   selPlayer = null;
   closePlayerModal();
   updateAll();
@@ -1002,13 +1313,29 @@ document.addEventListener('click', function(e) {
 // ═══════════════════════════════════════════════════════════════
 // RENDER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
+function populateTeamFilter() {
+  var teams = Array.from(new Set(PLAYERS.map(function(p) { return p.t; }))).sort();
+  var el = document.getElementById('teamFilter');
+  if (!el || el.options.length > 1) return;
+  teams.forEach(function(t) { var o = document.createElement('option'); o.value = t; o.textContent = t; el.appendChild(o); });
+}
+
 function renderPlayers() {
+  populateTeamFilter();
   const search = (document.getElementById('search').value || '').toLowerCase();
   const pos = document.getElementById('posFilter').value;
+  const valF = document.getElementById('valFilter') ? document.getElementById('valFilter').value : 'ALL';
+  const teamF = document.getElementById('teamFilter') ? document.getElementById('teamFilter').value : 'ALL';
   const avail = available().filter(p => {
     const mp = pos === 'ALL' || p.p.includes(pos);
-    const ms = !search || p.n.toLowerCase().includes(search) || p.t.toLowerCase().includes(search);
-    return mp && ms;
+    const ms = !search || normalizeName(p.n).includes(normalizeName(search)) || p.t.toLowerCase().includes(search);
+    let mv = true;
+    if (valF === '40') mv = p.v >= 40;
+    else if (valF === '25') mv = p.v >= 25 && p.v < 40;
+    else if (valF === '15') mv = p.v >= 15 && p.v < 25;
+    else if (valF === '1') mv = p.v >= 1 && p.v < 15;
+    const mt = teamF === 'ALL' || p.t === teamF;
+    return mp && ms && mv && mt;
   });
   _availCache = avail;
   document.getElementById('availCount').textContent = avail.length + ' available';
@@ -1130,6 +1457,7 @@ function renderLog() {
       <span style="color:${ov?'var(--red)':'var(--green)'};font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;min-width:34px;text-align:right">$${d.price}</span>
       <span style="font-size:9px;color:var(--text4);min-width:42px">val $${d.v}</span>
       <span style="font-size:9px;color:${ov?'var(--red)':'var(--green)'};min-width:52px">${ov?'+$'+diff+' OVER':'-$'+diff+' STEAL'}</span>
+      <button class="undo-btn" onclick="undoDraftPick(${i})" title="Undo">&#8617;</button>
     </div>`;
   }).join('');
 }
@@ -1137,7 +1465,7 @@ function renderLog() {
 function addNomBySearch() {
   const v = document.getElementById('nomSearch').value.trim();
   if (!v) return;
-  const p = PLAYERS.find(x => x.n.toLowerCase().includes(v.toLowerCase()));
+  const p = fuzzyFind(v);
   if (p && !state.noms.find(n => n.n === p.n)) {
     state.noms.push(p);
     saveState();
@@ -1203,10 +1531,14 @@ function updateTopBar() {
 }
 
 function updateTicker() {
-  const avail = available().slice(0, 18);
-  const t = avail.map(p => p.n + ' $' + p.v).join('   ·   ');
+  const avail = available().slice(0, 5);
+  const posNames = { C:'Catcher', SP:'Pitcher', RP:'Closer', OF:'Outfielder', SS:'Shortstop', '1B':'First Base', '2B':'Second Base', '3B':'Third Base' };
+  const t = avail.map(function(p) {
+    var reason = p.p.map(function(pos) { return posNames[pos] || pos; })[0];
+    return 'TARGET: ' + p.n + ' $' + p.v + ' ' + p.p.join('/') + ' — top ' + reason;
+  }).join('     ·     ');
   const el = document.getElementById('tickerEl');
-  if (el) el.textContent = t + '          ' + t;
+  if (el) { el.textContent = t + '          ' + t; el.style.fontSize = '10px'; }
 }
 
 function updateAll() {
