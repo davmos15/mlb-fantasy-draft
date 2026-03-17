@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLB Draft Ops — War Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#030712;--bg2:#080d17;--bg3:#0f172a;
+    --border:#1e293b;--border2:#334155;
+    --blue:#3b82f6;--blue-dark:#1d4ed8;
+    --green:#10b981;--amber:#f59e0b;
+    --red:#ef4444;--red-dark:#7f1d1d;
+    --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;--text4:#334155;
+    --sp-bg:#1e3a5f;--sp-col:#93c5fd;
+    --rp-bg:#3b1f5e;--rp-col:#c4b5fd;
+    --of-bg:#064e3b;--of-col:#6ee7b7;
+    --c-bg:#78350f;--c-col:#fde68a;
+    --inf-bg:#1f2937;--inf-col:#9ca3af;
+  }
+  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:12px}
+  #app{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+  .field-label{font-size:9px;color:var(--text3);letter-spacing:.1em;margin-bottom:4px;margin-top:12px}
+
+  /* TOP BAR */
+  .topbar{background:#020710;border-bottom:1px solid var(--border);padding:0 14px;display:flex;align-items:center;gap:12px;height:46px;flex-shrink:0}
+  .logo{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--blue);letter-spacing:.04em}
+  .stat-grp{display:flex;gap:16px;align-items:center}
+  .stat{text-align:right}
+  .stat .lbl{font-size:8px;color:var(--text4);letter-spacing:.1em}
+  .stat .val{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;line-height:1.1}
+  #syncBadge{font-size:9px;padding:2px 8px;border-radius:2px;background:var(--bg3);color:var(--text3)}
+  #syncBadge.on{background:#064e3b;color:var(--of-col)}
+
+  /* WARN BAR */
+  #warnBar{display:none;padding:4px 14px;font-size:10px;color:#fca5a5;background:var(--red-dark);flex-shrink:0;animation:warnPulse 1.5s infinite}
+  @keyframes warnPulse{0%,100%{background:#7f1d1d}50%{background:#991b1b}}
+
+  /* TABS */
+  .tabs{border-bottom:1px solid var(--border);display:flex;padding:0 6px;flex-shrink:0;background:#020710;overflow-x:auto}
+  .tab{background:none;border:none;cursor:pointer;padding:8px 13px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+  .tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+  .tab:hover:not(.on){color:var(--text2)}
+
+  /* CONTENT */
+  .content{flex:1;overflow:hidden;display:flex;min-height:0}
+  .panel{flex:1;overflow-y:auto;padding:12px}
+  .panel::-webkit-scrollbar{width:3px} .panel::-webkit-scrollbar-track{background:var(--bg)} .panel::-webkit-scrollbar-thumb{background:#1e40af}
+
+  /* BUTTONS */
+  .btn-p{background:var(--blue-dark);border:none;color:#fff;padding:7px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border-radius:2px;transition:all .15s}
+  .btn-p:hover{background:var(--blue)} .btn-p:disabled{background:var(--bg3);color:var(--text3);cursor:not-allowed}
+  .btn-g{background:none;border:1px solid var(--border);color:var(--text2);padding:6px 12px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;border-radius:2px;transition:all .15s}
+  .btn-g:hover{border-color:var(--blue);color:var(--blue)}
+  .btn-r{background:#7f1d1d;border:none;color:#fca5a5;padding:6px 12px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;border-radius:2px}
+  .btn-r:hover{background:#991b1b}
+  .btn-gut{background:#78350f;border:none;color:#fde68a;padding:6px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;border-radius:2px;transition:all .15s}
+  .btn-gut:hover{background:#92400e}
+
+  /* INPUTS */
+  input,select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;border-radius:2px;width:100%}
+  input:focus,select:focus{border-color:var(--blue)}
+  input[type=number]{font-family:'Barlow Condensed',sans-serif;font-size:16px}
+
+  /* REC BOXES */
+  .rec-box{background:#07120f;border:1px solid #065f46;border-radius:4px;padding:12px 14px;margin-bottom:8px}
+  .rec-title{color:var(--green);font-size:9px;letter-spacing:.12em;margin-bottom:8px;font-weight:700}
+  .rec-body{color:var(--text2);line-height:1.7;font-size:11px}
+  .rec-highlight{color:var(--text);font-weight:700;font-size:13px}
+
+  /* PLAYER LIST */
+  .player-row{display:flex;align-items:center;padding:5px 10px;border-bottom:1px solid #050d1a;cursor:pointer;transition:background .1s;gap:8px}
+  .player-row:hover{background:#0a1628}
+  .player-row.sel{background:#1e3a5f;border-left:3px solid var(--blue)}
+
+  /* BADGE */
+  .badge{display:inline-block;padding:1px 5px;font-size:9px;font-weight:700;letter-spacing:.03em}
+
+  /* SIDE PANEL */
+  .side-panel{width:250px;border-left:1px solid var(--border);padding:14px;background:#04080f;display:flex;flex-direction:column;gap:9px;flex-shrink:0;overflow-y:auto}
+  .side-panel::-webkit-scrollbar{width:2px}
+
+  /* ROSTER */
+  .roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px}
+  .slot-f{background:#071a10;border:1px solid #065f46;border-radius:3px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between}
+  .slot-e{background:#080d17;border:1px solid #0d1b2a;border-radius:3px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:100}
+  .modal-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:22px;width:340px;max-width:95vw}
+
+  /* BOTTOM BAR */
+  .bottombar{border-top:1px solid #0a0f1a;background:#020710;padding:3px 14px;display:flex;align-items:center;gap:12px;font-size:9px;color:var(--text4);flex-shrink:0;height:22px;overflow:hidden}
+  .ticker-wrap{flex:1;overflow:hidden}
+  .ticker{animation:tick 40s linear infinite;white-space:nowrap;display:inline-block}
+  @keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+  /* PULSE */
+  .pulse{animation:pulse 1.8s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* NOM / LOG */
+  .nom-row{display:flex;align-items:center;padding:9px 12px;background:var(--bg2);border:1px solid var(--border);margin-bottom:4px;border-radius:3px;gap:10px}
+  .log-row{display:flex;align-items:center;padding:5px 10px;border-bottom:1px solid #070f1c;gap:10px}
+
+  /* VALUE TAG */
+  .tag-buy{background:#1e3a5f;color:#93c5fd;padding:1px 6px;font-size:9px;font-weight:700}
+  .tag-snipe{background:#064e3b;color:#6ee7b7;padding:1px 6px;font-size:9px;font-weight:700}
+  .tag-over{background:#3b1f5e;color:#c4b5fd;padding:1px 6px;font-size:9px;font-weight:700}
+
+  @media(max-width:600px){
+    .side-panel{width:100%;border-left:none;border-top:1px solid var(--border)}
+    #tab-players .inner{flex-direction:column}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <span class="logo">⚡ MLB DRAFT OPS</span>
+    <span style="color:#1e3a5f;font-size:9px">H2H·12-TEAM·$260</span>
+    <div style="flex:1"></div>
+    <div class="stat-grp">
+      <div class="stat"><div class="lbl">BUDGET</div><div class="val" id="topBudget" style="color:var(--green)">$260</div></div>
+      <div class="stat"><div class="lbl">SLOTS LEFT</div><div class="val" id="topSlots" style="color:var(--text2)">22</div></div>
+      <div class="stat"><div class="lbl">LOGGED</div><div class="val" id="topLogged" style="color:var(--text3)">0</div></div>
+    </div>
+    <span id="syncBadge">LOCAL</span>
+    <button class="btn-g" style="font-size:9px" onclick="openRoomModal()">ROOM</button>
+    <button class="btn-g" style="font-size:9px" onclick="loadTest()">TEST</button>
+    <button class="btn-r" style="font-size:9px;margin-left:4px" onclick="resetDraft()">RESET</button>
+  </div>
+
+  <!-- WARN BAR -->
+  <div id="warnBar"></div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab on" data-tab="recs" onclick="setTab('recs',this)">RECOMMENDATIONS</button>
+    <button class="tab" data-tab="players" onclick="setTab('players',this)">PLAYERS</button>
+    <button class="tab" data-tab="roster" onclick="setTab('roster',this)">MY ROSTER</button>
+    <button class="tab" data-tab="noms" onclick="setTab('noms',this)">NOM QUEUE</button>
+    <button class="tab" data-tab="log" onclick="setTab('log',this)">DRAFT LOG</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- RECOMMENDATIONS -->
+    <div id="tab-recs" class="panel" style="max-width:860px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:10px">
+        <button class="btn-p" onclick="runRecs()">↻ REFRESH</button>
+        <button class="btn-gut" onclick="openGut()">🔥 GUT OVERRIDE</button>
+        <button class="btn-g" onclick="setTab('players',document.querySelector('[data-tab=players]'))">BROWSE PLAYERS →</button>
+      </div>
+      <div id="recsOutput"><div style="color:var(--text4);text-align:center;padding:40px;font-family:'Barlow Condensed',sans-serif;font-size:22px;letter-spacing:.08em">CONNECTING...</div></div>
+    </div>
+
+    <!-- PLAYERS -->
+    <div id="tab-players" class="panel" style="display:none;padding:0;flex-direction:column">
+      <div style="padding:8px 10px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex-shrink:0">
+        <input id="search" style="width:160px" placeholder="Search name / team..." oninput="renderPlayers()"/>
+        <select id="posFilter" onchange="renderPlayers()" style="width:90px">
+          <option>ALL</option><option>C</option><option>1B</option><option>2B</option>
+          <option>3B</option><option>SS</option><option>OF</option><option>SP</option><option>RP</option>
+        </select>
+        <span id="availCount" style="color:var(--text4);font-size:10px;margin-left:auto"></span>
+      </div>
+      <div style="flex:1;display:flex;overflow:hidden;min-height:0" class="inner">
+        <div id="playerList" style="flex:1;overflow-y:auto"></div>
+        <div id="sidePanel" class="side-panel" style="display:none">
+          <div id="spName" style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700"></div>
+          <div id="spMeta" style="color:var(--text3);font-size:10px"></div>
+          <div style="padding:6px 10px;background:var(--bg3);border:1px solid var(--sp-bg);display:flex;justify-content:space-between;align-items:center;margin-top:2px">
+            <span style="font-size:9px;color:var(--text3)">FAIR VALUE</span>
+            <span id="spVal" style="font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:700;color:var(--amber)"></span>
+          </div>
+          <div id="spInsight" style="background:#07120f;border:1px solid #065f46;padding:8px;font-size:10px;color:var(--text2);line-height:1.65;border-radius:3px"></div>
+          <div style="font-size:9px;color:var(--text3);letter-spacing:.08em;margin-top:2px">WINNING BID $</div>
+          <input type="number" id="bidPrice" min="1" max="260" placeholder="Enter price..." onkeydown="if(event.key==='Enter')buyPlayer()"/>
+          <button class="btn-p" style="width:100%;padding:9px" onclick="buyPlayer()">✓ I WON THIS PLAYER</button>
+          <button class="btn-g" style="width:100%" onclick="logOther()">OTHER TEAM GOT THIS</button>
+          <button class="btn-gut" style="width:100%" onclick="gutFromSide()">🔥 GUT OVERRIDE</button>
+          <button class="btn-g" style="width:100%" onclick="addNomFromSide()">+ ADD TO NOM QUEUE</button>
+          <button onclick="closeSide()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-family:inherit;font-size:10px;text-align:center;margin-top:4px">× close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROSTER -->
+    <div id="tab-roster" class="panel" style="display:none">
+      <div id="rosterGrid" class="roster-grid"></div>
+      <div id="rosterStats" style="margin-top:12px;padding:10px;background:#070f1c;display:flex;gap:20px;flex-wrap:wrap;font-size:11px;border-top:2px solid var(--border)"></div>
+    </div>
+
+    <!-- NOMINATIONS -->
+    <div id="tab-noms" class="panel" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <input id="nomSearch" style="flex:1;min-width:160px" placeholder="Type player name to add..." onkeydown="if(event.key==='Enter')addNomBySearch()"/>
+        <button class="btn-p" onclick="addNomBySearch()">ADD</button>
+        <button class="btn-p" onclick="suggestNoms()">AUTO-SUGGEST</button>
+      </div>
+      <div id="nomList"></div>
+    </div>
+
+    <!-- LOG -->
+    <div id="tab-log" class="panel" style="display:none">
+      <div style="font-size:9px;color:var(--text4);letter-spacing:.1em;margin-bottom:10px">DRAFTED BY OTHER TEAMS — STEALS & OVERPAYS TRACKED</div>
+      <div id="logList"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottombar">
+    <span id="statusDot">● READY</span>
+    <span style="color:#0f172a">·</span>
+    <span>HR=8 · SV=16 · W=14 · QS=6</span>
+    <div class="ticker-wrap">
+      <div class="ticker" id="tickerEl"></div>
+    </div>
+  </div>
+
+  <!-- ROOM CHANGE MODAL -->
+  <div class="modal-overlay" id="roomModal" style="display:none">
+    <div class="modal-card">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--blue);margin-bottom:8px">CHANGE DRAFT ROOM</div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.6">Enter a different room ID to switch drafts. Both devices must use the same room ID.</div>
+      <div class="field-label">ROOM ID</div>
+      <input id="roomInput" placeholder="e.g. nadav2025" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')changeRoom()"/>
+      <div id="roomStatus" style="font-size:10px;margin-bottom:10px;display:none"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-p" style="flex:1" onclick="changeRoom()">CONNECT</button>
+        <button class="btn-g" onclick="closeRoomModal()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUT OVERRIDE MODAL -->
+  <div class="modal-overlay" id="gutModal" style="display:none">
+    <div class="modal-card">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:#fde68a;margin-bottom:8px">🔥 GUT OVERRIDE</div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.6">Type any player — the engine argues FOR them regardless of value score.</div>
+      <input id="gutInput" placeholder="Player name..." style="margin-bottom:10px" onkeydown="if(event.key==='Enter')runGut()"/>
+      <div id="gutResult" style="background:#07120f;border:1px solid #065f46;padding:10px;font-size:10px;color:var(--text2);line-height:1.75;min-height:80px;display:none;margin-bottom:10px;white-space:pre-wrap;border-radius:3px;max-height:260px;overflow-y:auto"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-gut" style="flex:1" onclick="runGut()">ANALYSE</button>
+        <button class="btn-g" onclick="closeGut()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FIREBASE COMPAT SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// PLAYER DATA — 280 players, 2025 Yahoo Rankings
+// ═══════════════════════════════════════════════════════════════
+const PLAYERS_RAW = [
+  {r:1,n:'Ronald Acuña Jr.',t:'ATL',p:['OF'],v:75},{r:2,n:'Shohei Ohtani',t:'LAD',p:['DH','SP'],v:72},
+  {r:3,n:'Mookie Betts',t:'LAD',p:['OF','SS'],v:58},{r:4,n:'Freddie Freeman',t:'LAD',p:['1B'],v:52},
+  {r:5,n:'Aaron Judge',t:'NYY',p:['OF'],v:68},{r:6,n:'Juan Soto',t:'NYY',p:['OF'],v:60},
+  {r:7,n:'Julio Rodríguez',t:'SEA',p:['OF'],v:55},{r:8,n:'Jose Ramirez',t:'CLE',p:['3B'],v:58},
+  {r:9,n:'Yordan Alvarez',t:'HOU',p:['DH','OF'],v:54},{r:10,n:'Elly De La Cruz',t:'CIN',p:['SS','3B'],v:50},
+  {r:11,n:'Bobby Witt Jr.',t:'KC',p:['SS'],v:56},{r:12,n:'Fernando Tatis Jr.',t:'SD',p:['OF','SS'],v:48},
+  {r:13,n:'Gunnar Henderson',t:'BAL',p:['SS','3B'],v:50},{r:14,n:'Paul Skenes',t:'PIT',p:['SP'],v:38},
+  {r:15,n:'Tarik Skubal',t:'DET',p:['SP'],v:36},{r:16,n:'Zack Wheeler',t:'PHI',p:['SP'],v:34},
+  {r:17,n:'Corey Seager',t:'TEX',p:['SS'],v:44},{r:18,n:'Kyle Tucker',t:'CHC',p:['OF'],v:46},
+  {r:19,n:'Francisco Lindor',t:'NYM',p:['SS'],v:42},{r:20,n:'Bryce Harper',t:'PHI',p:['1B','DH'],v:40},
+  {r:21,n:'Adley Rutschman',t:'BAL',p:['C'],v:38},{r:22,n:'Cal Raleigh',t:'SEA',p:['C'],v:26},
+  {r:23,n:'Tyler Glasnow',t:'LAD',p:['SP'],v:30},{r:24,n:'Spencer Strider',t:'ATL',p:['SP'],v:32},
+  {r:25,n:'Gerrit Cole',t:'NYY',p:['SP'],v:28},{r:26,n:'Nolan Arenado',t:'STL',p:['3B'],v:28},
+  {r:27,n:'Matt Olson',t:'ATL',p:['1B'],v:30},{r:28,n:'Trea Turner',t:'PHI',p:['SS'],v:36},
+  {r:29,n:'Michael Harris II',t:'ATL',p:['OF'],v:30},{r:30,n:'Jarren Duran',t:'BOS',p:['OF'],v:34},
+  {r:31,n:'Steven Kwan',t:'CLE',p:['OF'],v:28},{r:32,n:'Pete Alonso',t:'NYM',p:['1B'],v:32},
+  {r:33,n:'Ketel Marte',t:'ARI',p:['2B','OF'],v:30},{r:34,n:'Marcus Semien',t:'TEX',p:['2B'],v:26},
+  {r:35,n:'Corbin Carroll',t:'ARI',p:['OF'],v:24},{r:36,n:'Jazz Chisholm Jr.',t:'NYY',p:['2B','OF','3B'],v:28},
+  {r:37,n:'Austin Riley',t:'ATL',p:['3B'],v:30},{r:38,n:'William Contreras',t:'MIL',p:['C'],v:32},
+  {r:39,n:'Randy Arozarena',t:'SEA',p:['OF'],v:24},{r:40,n:'Bryan Reynolds',t:'PIT',p:['OF'],v:22},
+  {r:41,n:'Emmanuel Clase',t:'CLE',p:['RP'],v:38},{r:42,n:'Josh Hader',t:'HOU',p:['RP'],v:36},
+  {r:43,n:'Ryan Helsley',t:'STL',p:['RP'],v:34},{r:44,n:'Edwin Díaz',t:'NYM',p:['RP'],v:30},
+  {r:45,n:'Félix Bautista',t:'BAL',p:['RP'],v:24},{r:46,n:'Mason Miller',t:'OAK',p:['RP'],v:28},
+  {r:47,n:'Jhoan Duran',t:'MIN',p:['RP'],v:22},{r:48,n:'Andrés Muñoz',t:'SEA',p:['RP'],v:20},
+  {r:49,n:'Devin Williams',t:'NYY',p:['RP'],v:20},{r:50,n:'Camilo Doval',t:'SF',p:['RP'],v:22},
+  {r:51,n:'Corbin Burnes',t:'ARI',p:['SP'],v:28},{r:52,n:'Garrett Crochet',t:'BOS',p:['SP'],v:28},
+  {r:53,n:'Yoshinobu Yamamoto',t:'LAD',p:['SP'],v:30},{r:54,n:'Logan Gilbert',t:'SEA',p:['SP'],v:26},
+  {r:55,n:'Dylan Cease',t:'SD',p:['SP'],v:26},{r:56,n:'Chris Sale',t:'ATL',p:['SP'],v:24},
+  {r:57,n:'Kevin Gausman',t:'TOR',p:['SP'],v:24},{r:58,n:'Hunter Greene',t:'CIN',p:['SP'],v:24},
+  {r:59,n:'Shota Imanaga',t:'CHC',p:['SP'],v:22},{r:60,n:'Framber Valdez',t:'HOU',p:['SP'],v:22},
+  {r:61,n:'Max Fried',t:'NYY',p:['SP'],v:26},{r:62,n:'George Kirby',t:'SEA',p:['SP'],v:22},
+  {r:63,n:'Pablo López',t:'MIN',p:['SP'],v:20},{r:64,n:'Shane McClanahan',t:'TB',p:['SP'],v:20},
+  {r:65,n:'Cole Ragans',t:'KC',p:['SP'],v:20},{r:66,n:'Michael King',t:'SD',p:['SP'],v:18},
+  {r:67,n:'Tanner Bibee',t:'CLE',p:['SP'],v:18},{r:68,n:'Joe Ryan',t:'MIN',p:['SP'],v:18},
+  {r:69,n:'Aaron Nola',t:'PHI',p:['SP'],v:18},{r:70,n:'Hunter Brown',t:'HOU',p:['SP'],v:20},
+  {r:71,n:'Vladimir Guerrero Jr.',t:'TOR',p:['1B'],v:34},{r:72,n:'Alex Bregman',t:'BOS',p:['3B','2B'],v:26},
+  {r:73,n:'Manny Machado',t:'SD',p:['3B'],v:24},{r:74,n:'Isaac Paredes',t:'CHC',p:['3B','2B'],v:22},
+  {r:75,n:'Matt Chapman',t:'SF',p:['3B'],v:22},{r:76,n:'Ozzie Albies',t:'ATL',p:['2B'],v:22},
+  {r:77,n:'Will Smith',t:'LAD',p:['C'],v:22},{r:78,n:'Francisco Alvarez',t:'NYM',p:['C'],v:20},
+  {r:79,n:'Sean Murphy',t:'ATL',p:['C'],v:20},{r:80,n:'Mike Trout',t:'LAA',p:['OF'],v:22},
+  {r:81,n:'Luis Robert Jr.',t:'CWS',p:['OF'],v:22},{r:82,n:'Seiya Suzuki',t:'CHC',p:['OF'],v:20},
+  {r:83,n:'Jackson Merrill',t:'SD',p:['OF'],v:22},{r:84,n:'Anthony Santander',t:'TOR',p:['OF'],v:22},
+  {r:85,n:'Teoscar Hernández',t:'LAD',p:['OF'],v:20},{r:86,n:'Tommy Edman',t:'LAD',p:['2B','SS','OF'],v:18},
+  {r:87,n:'Ha-Seong Kim',t:'SD',p:['SS','2B','3B'],v:20},{r:88,n:'Carlos Correa',t:'MIN',p:['SS'],v:22},
+  {r:89,n:'CJ Abrams',t:'WSH',p:['SS'],v:20},{r:90,n:'Dansby Swanson',t:'CHC',p:['SS'],v:18},
+  {r:91,n:'Willy Adames',t:'SF',p:['SS'],v:26},{r:92,n:'Royce Lewis',t:'MIN',p:['SS','3B'],v:18},
+  {r:93,n:'Masyn Winn',t:'STL',p:['SS'],v:16},{r:94,n:'Zach Neto',t:'LAA',p:['SS'],v:16},
+  {r:95,n:'Jackson Holliday',t:'BAL',p:['2B','SS'],v:16},{r:96,n:'Anthony Volpe',t:'NYY',p:['SS'],v:22},
+  {r:97,n:'Ezequiel Tovar',t:'COL',p:['SS'],v:16},{r:98,n:'Wyatt Langford',t:'TEX',p:['OF'],v:18},
+  {r:99,n:'Colton Cowser',t:'BAL',p:['OF'],v:16},{r:100,n:'Evan Carter',t:'TEX',p:['OF'],v:14},
+  {r:101,n:'Josh Lowe',t:'TB',p:['OF'],v:14},{r:102,n:'Lawrence Butler',t:'OAK',p:['OF'],v:14},
+  {r:103,n:'Lars Nootbaar',t:'STL',p:['OF'],v:14},{r:104,n:'Brenton Doyle',t:'COL',p:['OF'],v:14},
+  {r:105,n:'Jonatan Clase',t:'SEA',p:['OF'],v:14},{r:106,n:"Tyler O'Neill",t:'BOS',p:['OF'],v:16},
+  {r:107,n:'Cody Bellinger',t:'CHC',p:['OF','1B'],v:18},{r:108,n:'Byron Buxton',t:'MIN',p:['OF'],v:20},
+  {r:109,n:'Ian Happ',t:'CHC',p:['OF'],v:18},{r:110,n:'Jurickson Profar',t:'SD',p:['OF','1B'],v:14},
+  {r:111,n:'Nick Castellanos',t:'PHI',p:['OF'],v:16},{r:112,n:'Adolis Garcia',t:'TEX',p:['OF'],v:18},
+  {r:113,n:'Giancarlo Stanton',t:'NYY',p:['DH','OF'],v:16},{r:114,n:'Jorge Soler',t:'SF',p:['DH','OF'],v:18},
+  {r:115,n:'Pete Fairbanks',t:'TB',p:['RP'],v:20},{r:116,n:'Tanner Scott',t:'SD',p:['RP'],v:16},
+  {r:117,n:'Luke Weaver',t:'NYY',p:['RP'],v:16},{r:118,n:'Jordan Romano',t:'TOR',p:['RP'],v:14},
+  {r:119,n:'Kirby Yates',t:'TEX',p:['RP'],v:12},{r:120,n:'Kyle Finnegan',t:'WSH',p:['RP'],v:12},
+  {r:121,n:'Jose Leclerc',t:'TEX',p:['RP'],v:12},{r:122,n:'Raisel Iglesias',t:'LAA',p:['RP'],v:12},
+  {r:123,n:'Robert Suarez',t:'SD',p:['RP'],v:14},{r:124,n:'Reynaldo López',t:'ATL',p:['RP'],v:10},
+  {r:125,n:'Jose Alvarado',t:'PHI',p:['RP'],v:10},{r:126,n:'Clay Holmes',t:'NYY',p:['RP'],v:18},
+  {r:127,n:'Alexis Diaz',t:'CIN',p:['RP'],v:18},{r:128,n:'Kenley Jansen',t:'BOS',p:['RP'],v:16},
+  {r:129,n:'Carlos Estévez',t:'LAA',p:['RP'],v:16},{r:130,n:'David Bednar',t:'PIT',p:['RP'],v:18},
+  {r:131,n:'Paul Sewald',t:'ARI',p:['RP'],v:14},{r:132,n:'Spencer Arrighetti',t:'HOU',p:['SP'],v:12},
+  {r:133,n:'Tanner Houck',t:'BOS',p:['SP'],v:14},{r:134,n:'Jesus Luzardo',t:'PHI',p:['SP'],v:16},
+  {r:135,n:'Jared Jones',t:'PIT',p:['SP'],v:14},{r:136,n:'Taj Bradley',t:'TB',p:['SP'],v:14},
+  {r:137,n:'Mitch Keller',t:'PIT',p:['SP'],v:16},{r:138,n:'Freddy Peralta',t:'MIL',p:['SP'],v:16},
+  {r:139,n:'Yusei Kikuchi',t:'TOR',p:['SP'],v:16},{r:140,n:'Nick Lodolo',t:'CIN',p:['SP'],v:16},
+  {r:141,n:'Ranger Suárez',t:'PHI',p:['SP'],v:16},{r:142,n:'Bailey Ober',t:'MIN',p:['SP'],v:12},
+  {r:143,n:'Gavin Williams',t:'CLE',p:['SP'],v:12},{r:144,n:'Jackson Jobe',t:'DET',p:['SP'],v:12},
+  {r:145,n:'Sandy Alcantara',t:'MIA',p:['SP'],v:16},{r:146,n:'Luis Castillo',t:'SEA',p:['SP'],v:20},
+  {r:147,n:'Clarke Schmidt',t:'NYY',p:['SP'],v:14},{r:148,n:'Blake Snell',t:'SF',p:['SP'],v:22},
+  {r:149,n:'Kodai Senga',t:'NYM',p:['SP'],v:20},{r:150,n:'Chris Bassitt',t:'TOR',p:['SP'],v:14},
+  {r:151,n:'Kyle Bradish',t:'BAL',p:['SP'],v:16},{r:152,n:'Carlos Rodón',t:'NYY',p:['SP'],v:16},
+  {r:153,n:'Merrill Kelly',t:'ARI',p:['SP'],v:12},{r:154,n:'Reese Olson',t:'DET',p:['SP'],v:14},
+  {r:155,n:'Mitch Keller',t:'PIT',p:['SP'],v:16},{r:156,n:'Freddy Peralta',t:'MIL',p:['SP'],v:16},
+  {r:157,n:'Nick Pivetta',t:'BOS',p:['SP'],v:10},{r:158,n:'Vinnie Pasquantino',t:'KC',p:['1B','DH'],v:14},
+  {r:159,n:'Triston Casas',t:'BOS',p:['1B'],v:20},{r:160,n:'Christian Walker',t:'HOU',p:['1B'],v:20},
+  {r:161,n:'Ryan Mountcastle',t:'BAL',p:['1B'],v:16},{r:162,n:'Nathaniel Lowe',t:'TEX',p:['1B'],v:24},
+  {r:163,n:'Rhys Hoskins',t:'MIL',p:['1B'],v:16},{r:164,n:'Spencer Torkelson',t:'DET',p:['1B','DH'],v:14},
+  {r:165,n:'Jake Burger',t:'MIA',p:['3B','DH'],v:16},{r:166,n:'Nolan Jones',t:'COL',p:['3B','OF'],v:18},
+  {r:167,n:'Josh Jung',t:'TEX',p:['3B'],v:20},{r:168,n:'Ryan McMahon',t:'COL',p:['2B','3B'],v:16},
+  {r:169,n:'Jordan Walker',t:'STL',p:['3B','OF'],v:16},{r:170,n:'Mark Vientos',t:'NYM',p:['3B','1B'],v:16},
+  {r:171,n:'Nolan Gorman',t:'STL',p:['2B','3B'],v:16},{r:172,n:'Colt Keith',t:'DET',p:['2B','DH'],v:14},
+  {r:173,n:'Gleyber Torres',t:'DET',p:['2B'],v:18},{r:174,n:'Andrés Giménez',t:'CLE',p:['2B'],v:14},
+  {r:175,n:'Luis Arraez',t:'SD',p:['2B','1B'],v:16},{r:176,n:'Jonathan India',t:'CIN',p:['2B'],v:16},
+  {r:177,n:'Edouard Julien',t:'MIN',p:['2B'],v:14},{r:178,n:'MJ Melendez',t:'KC',p:['C','OF'],v:14},
+  {r:179,n:"Logan O'Hoppe",t:'LAA',p:['C'],v:18},{r:180,n:'Austin Wells',t:'NYY',p:['C'],v:16},
+  {r:181,n:'Gabriel Moreno',t:'ARI',p:['C'],v:16},{r:182,n:'Ryan Jeffers',t:'MIN',p:['C'],v:12},
+  {r:183,n:'Tyler Stephenson',t:'CIN',p:['C'],v:14},{r:184,n:'Shea Langeliers',t:'OAK',p:['C'],v:16},
+  {r:185,n:'Patrick Bailey',t:'SF',p:['C'],v:14},{r:186,n:'Jonah Heim',t:'TEX',p:['C'],v:12},
+  {r:187,n:'Salvador Perez',t:'KC',p:['C','1B'],v:14},{r:188,n:'Bo Naylor',t:'CLE',p:['C'],v:14},
+  {r:189,n:'Willson Contreras',t:'STL',p:['C'],v:12},{r:190,n:'Daulton Varsho',t:'TOR',p:['OF','C'],v:16},
+  {r:191,n:'Wilyer Abreu',t:'BOS',p:['OF'],v:20},{r:192,n:'Sal Frelick',t:'MIL',p:['OF'],v:12},
+  {r:193,n:'Christian Yelich',t:'MIL',p:['OF'],v:22},{r:194,n:'Heliot Ramos',t:'SF',p:['OF'],v:12},
+  {r:195,n:'Chas McCormick',t:'HOU',p:['OF'],v:16},{r:196,n:'Cedric Mullins',t:'BAL',p:['OF'],v:14},
+  {r:197,n:'Adam Duvall',t:'BOS',p:['OF'],v:10},{r:198,n:'Kerry Carpenter',t:'DET',p:['OF','DH'],v:12},
+  {r:199,n:'Esteury Ruiz',t:'OAK',p:['OF','2B'],v:12},{r:200,n:'Max Kepler',t:'MIN',p:['OF'],v:10},
+  {r:201,n:'Eloy Jiménez',t:'CWS',p:['OF','DH'],v:10},{r:202,n:'Tommy Edman',t:'LAD',p:['2B','SS','OF'],v:18},
+  {r:203,n:'Dylan Moore',t:'SEA',p:['2B','SS','OF'],v:10},{r:204,n:'Brendan Donovan',t:'STL',p:['2B','3B','OF'],v:12},
+  {r:205,n:'Thairo Estrada',t:'SF',p:['2B','SS'],v:10},{r:206,n:'Xavier Edwards',t:'MIA',p:['2B','SS'],v:10},
+  {r:207,n:'Tyler Soderstrom',t:'OAK',p:['C','DH'],v:12},{r:208,n:'Kevin Parada',t:'NYM',p:['C'],v:10},
+  {r:209,n:'Keibert Ruiz',t:'WSH',p:['C'],v:10},{r:210,n:'Danny Jansen',t:'BOS',p:['C'],v:12},
+  {r:211,n:'Adbert Alzolay',t:'CHC',p:['RP'],v:8},{r:212,n:'Yennier Cano',t:'BAL',p:['RP'],v:10},
+  {r:213,n:'Alex Lange',t:'DET',p:['RP'],v:8},{r:214,n:'Michael Kopech',t:'LAD',p:['RP'],v:8},
+  {r:215,n:'Jorge López',t:'MIN',p:['RP'],v:8},{r:216,n:'Jason Adam',t:'TB',p:['RP'],v:8},
+  {r:217,n:'A.J. Puk',t:'MIA',p:['RP'],v:10},{r:218,n:'Ryan Pressly',t:'HOU',p:['RP'],v:8},
+  {r:219,n:'Brusdar Graterol',t:'LAD',p:['RP'],v:8},{r:220,n:'Hunter Harvey',t:'WSH',p:['RP'],v:8},
+  {r:221,n:'Kyle Harrison',t:'SF',p:['SP'],v:12},{r:222,n:'Jacob Misiorowski',t:'MIL',p:['SP'],v:10},
+  {r:223,n:'Ben Brown',t:'CHC',p:['SP'],v:12},{r:224,n:'Emmet Sheehan',t:'LAD',p:['SP'],v:10},
+  {r:225,n:'Marcus Stroman',t:'NYY',p:['SP'],v:10},{r:226,n:'Nick Martinez',t:'CIN',p:['SP','RP'],v:8},
+  {r:227,n:'Tyler Wells',t:'BAL',p:['SP','RP'],v:10},{r:228,n:'Alec Marsh',t:'KC',p:['SP'],v:8},
+  {r:229,n:'Jake Irvin',t:'WSH',p:['SP'],v:10},{r:230,n:'Zach Eflin',t:'TB',p:['SP'],v:12},
+  {r:231,n:'Cade Cavalli',t:'WSH',p:['SP'],v:12},{r:232,n:'Drew Thorpe',t:'CWS',p:['SP'],v:10},
+  {r:233,n:'Quinn Priester',t:'PIT',p:['SP'],v:10},{r:234,n:'Hayden Birdsong',t:'SF',p:['SP'],v:8},
+  {r:235,n:'Tobias Myers',t:'MIL',p:['SP'],v:8},{r:236,n:'Chris Paddack',t:'MIN',p:['SP'],v:8},
+  {r:237,n:'Aaron Civale',t:'TB',p:['SP'],v:8},{r:238,n:'Nick Pivetta',t:'BOS',p:['SP'],v:10},
+  {r:239,n:'Reid Detmers',t:'LAA',p:['SP'],v:10},{r:240,n:'Joc Pederson',t:'ARI',p:['OF','DH'],v:12},
+  {r:241,n:'Lane Thomas',t:'WSH',p:['OF'],v:12},{r:242,n:'Jesse Winker',t:'NYM',p:['OF'],v:10},
+  {r:243,n:'Jake Fraley',t:'CIN',p:['OF'],v:10},{r:244,n:'Davis Schneider',t:'TOR',p:['OF','2B'],v:10},
+  {r:245,n:'Josh Bell',t:'MIA',p:['1B','DH'],v:10},{r:246,n:'Nolan Schanuel',t:'LAA',p:['1B'],v:12},
+  {r:247,n:'Eugenio Suárez',t:'ARI',p:['3B'],v:14},{r:248,n:'Christian Encarnacion-Strand',t:'CIN',p:['3B','1B'],v:12},
+  {r:249,n:'Brett Baty',t:'NYM',p:['3B'],v:10},{r:250,n:'JP Crawford',t:'SEA',p:['SS'],v:12},
+  {r:251,n:'Geraldo Perdomo',t:'ARI',p:['SS'],v:10},{r:252,n:'Jonathan Aranda',t:'TB',p:['2B','1B'],v:8},
+  {r:253,n:'Wenceel Perez',t:'DET',p:['2B'],v:8},{r:254,n:'Michael Massey',t:'KC',p:['2B'],v:8},
+  {r:255,n:'Nick Yorke',t:'BOS',p:['2B'],v:10},{r:256,n:'Brendan Rodgers',t:'COL',p:['2B'],v:10},
+  {r:257,n:'Ji Hwan Bae',t:'PIT',p:['2B','OF'],v:8},{r:258,n:'Gavin Lux',t:'LAD',p:['2B','SS'],v:10},
+  {r:259,n:'Tyler Freeman',t:'CLE',p:['SS','2B','3B'],v:8},{r:260,n:'Rowdy Tellez',t:'MIL',p:['1B'],v:8},
+  {r:261,n:'Elias Díaz',t:'COL',p:['C'],v:8},{r:262,n:'Blake Sabol',t:'SF',p:['C','OF'],v:8},
+  {r:263,n:'Heliot Ramos',t:'SF',p:['OF'],v:12},{r:264,n:'Jake Meyers',t:'HOU',p:['OF'],v:10},
+  {r:265,n:'Dominic Canzone',t:'SEA',p:['OF'],v:10},{r:266,n:'Oswaldo Cabrera',t:'NYY',p:['OF','SS','2B'],v:8},
+  {r:267,n:'Mark Vientos',t:'NYM',p:['3B','1B'],v:16},{r:268,n:'Nolan Gorman',t:'STL',p:['2B','3B'],v:16},
+  {r:269,n:'Royce Lewis',t:'MIN',p:['SS','3B'],v:18},{r:270,n:'Masyn Winn',t:'STL',p:['SS'],v:16},
+  {r:271,n:'Jorge Soler',t:'SF',p:['DH','OF'],v:18},{r:272,n:'Giancarlo Stanton',t:'NYY',p:['DH','OF'],v:16},
+  {r:273,n:'Cody Bellinger',t:'CHC',p:['OF','1B'],v:18},{r:274,n:'Byron Buxton',t:'MIN',p:['OF'],v:20},
+  {r:275,n:'Ian Happ',t:'CHC',p:['OF'],v:18},{r:276,n:'Chris Taylor',t:'LAD',p:['2B','SS','3B','OF'],v:6},
+  {r:277,n:'Aroldis Chapman',t:'PIT',p:['RP'],v:8},{r:278,n:'Trevor Megill',t:'MIL',p:['RP'],v:8},
+  {r:279,n:'Erik Swanson',t:'TOR',p:['RP'],v:6},{r:280,n:'Jordan Lyles',t:'KC',p:['SP'],v:4}
+];
+
+const PLAYERS = Array.from(new Map(PLAYERS_RAW.map(p=>[p.n,p])).values());
+
+// ═══════════════════════════════════════════════════════════════
+// ROSTER SLOTS
+// ═══════════════════════════════════════════════════════════════
+const SLOTS = [
+  {id:'C',lbl:'C',pos:['C']},{id:'1B',lbl:'1B',pos:['1B']},{id:'2B',lbl:'2B',pos:['2B']},
+  {id:'3B',lbl:'3B',pos:['3B']},{id:'SS',lbl:'SS',pos:['SS']},{id:'IF',lbl:'IF',pos:['1B','2B','3B','SS']},
+  {id:'OF1',lbl:'OF',pos:['OF']},{id:'OF2',lbl:'OF',pos:['OF']},{id:'OF3',lbl:'OF',pos:['OF']},
+  {id:'OF4',lbl:'OF',pos:['OF']},{id:'UTIL1',lbl:'UTIL',pos:['C','1B','2B','3B','SS','OF','DH']},
+  {id:'UTIL2',lbl:'UTIL',pos:['C','1B','2B','3B','SS','OF','DH']},
+  {id:'SP1',lbl:'SP',pos:['SP']},{id:'SP2',lbl:'SP',pos:['SP']},{id:'SP3',lbl:'SP',pos:['SP']},
+  {id:'RP1',lbl:'RP',pos:['RP']},{id:'RP2',lbl:'RP',pos:['RP']},
+  {id:'P1',lbl:'P',pos:['SP','RP']},{id:'P2',lbl:'P',pos:['SP','RP']},
+  {id:'P3',lbl:'P',pos:['SP','RP']},{id:'P4',lbl:'P',pos:['SP','RP']},
+  {id:'BN',lbl:'BN',pos:['C','1B','2B','3B','SS','OF','SP','RP','DH']}
+];
+
+const BUDGET = 260;
+const LS_KEY = 'mlb_draft_ops_v4';
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let state = {
+  roster: Array(22).fill(null),
+  drafted: [],
+  noms: [],
+  spent: 0,
+  _ts: 0
+};
+let selPlayer = null;
+let fbRef = null;
+let isFb = false;
+let lastFbTs = 0;
+
+// ═══════════════════════════════════════════════════════════════
+// FIREBASE
+// ═══════════════════════════════════════════════════════════════
+const FB_CONFIG = {
+  url: 'https://mlb-draft-default-rtdb.firebaseio.com',
+  key: 'AIzaSyAA7-WB2ape7nIAb20ZD07bDGmziqqz-kw',
+  projectId: 'mlb-draft',
+  defaultRoom: 'nadav2025'
+};
+let currentRoom = FB_CONFIG.defaultRoom;
+let fbApp = null;
+
+function initFirebase(roomId) {
+  const room = roomId || FB_CONFIG.defaultRoom;
+  currentRoom = room;
+  try {
+    if (!fbApp) {
+      try { fbApp = firebase.app(); } catch(e) {
+        fbApp = firebase.initializeApp({ apiKey: FB_CONFIG.key, databaseURL: FB_CONFIG.url, projectId: FB_CONFIG.projectId });
+      }
+    }
+    const db = firebase.database(fbApp);
+    if (fbRef) fbRef.off();
+    fbRef = db.ref('rooms/' + room);
+    isFb = true;
+    fbRef.on('value', snap => {
+      const d = snap.val();
+      if (d && d._ts > lastFbTs) {
+        lastFbTs = d._ts;
+        state = Object.assign({}, state, d);
+        updateAll();
+      }
+    });
+    const badge = document.getElementById('syncBadge');
+    badge.textContent = 'FIREBASE ✓';
+    badge.classList.add('on');
+    runRecs();
+    return true;
+  } catch(e) {
+    console.warn('Firebase init failed:', e.message);
+    return false;
+  }
+}
+
+function localMode() {
+  try {
+    const s = localStorage.getItem(LS_KEY);
+    if (s) state = Object.assign(state, JSON.parse(s));
+  } catch(e) {}
+  setInterval(() => {
+    try {
+      const s = localStorage.getItem(LS_KEY);
+      if (s) { const p = JSON.parse(s); if (p._ts > state._ts) { state = Object.assign(state, p); updateAll(); } }
+    } catch(e) {}
+  }, 2000);
+  const badge = document.getElementById('syncBadge');
+  badge.textContent = 'LOCAL';
+  badge.classList.remove('on');
+  runRecs();
+}
+
+function saveState() {
+  state._ts = Date.now();
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+  if (isFb && fbRef) fbRef.set(state).catch(e => console.warn('FB:', e));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+function budget() { return BUDGET - state.spent; }
+function slotsLeft() { return 22 - state.roster.filter(Boolean).length; }
+function filledSlots() { return state.roster.filter(Boolean).length; }
+
+function getDraftedSet() {
+  const s = new Set();
+  state.drafted.filter(Boolean).forEach(d => d.n && s.add(d.n));
+  state.roster.filter(Boolean).forEach(r => r.player && s.add(r.player.n));
+  return s;
+}
+
+function available() {
+  const d = getDraftedSet();
+  return PLAYERS.filter(p => !d.has(p.n));
+}
+
+function findSlot(player) {
+  for (let i = 0; i < SLOTS.length; i++) {
+    if (!state.roster[i] && player.p.some(p => SLOTS[i].pos.includes(p))) return i;
+  }
+  for (let i = 0; i < SLOTS.length; i++) {
+    if (!state.roster[i] && (SLOTS[i].id.startsWith('UTIL') || SLOTS[i].id === 'BN')) return i;
+  }
+  return -1;
+}
+
+function getBadge(pos) {
+  if (pos.includes('SP')) return { bg: 'var(--sp-bg)', col: 'var(--sp-col)' };
+  if (pos.includes('RP')) return { bg: 'var(--rp-bg)', col: 'var(--rp-col)' };
+  if (pos.includes('OF')) return { bg: 'var(--of-bg)', col: 'var(--of-col)' };
+  if (pos.includes('C')) return { bg: 'var(--c-bg)', col: 'var(--c-col)' };
+  return { bg: 'var(--inf-bg)', col: 'var(--inf-col)' };
+}
+
+function calcInflation() {
+  const r = state.drafted.filter(d => d && d.v && d.price);
+  if (r.length < 3) return 0;
+  const avg = r.reduce((s, d) => s + (d.price - d.v), 0) / r.length;
+  return Math.round((avg / 10) * 100);
+}
+
+function getInsight(p) {
+  if (p.p.includes('RP') && p.v >= 28) return 'Elite closer. SV=16 is the highest-scoring pitching stat — a 35-save season is 560 points from saves alone. Top priority.';
+  if (p.p.includes('RP')) return 'Closer with save upside. SV=16 scoring means even 25 saves adds massive pts. Worth a premium over non-closers.';
+  if (p.p.includes('C') && p.v >= 30) return 'Premium catcher — C is the scarcest position in auction. Letting rivals grab elite Cs early is a season-long handicap.';
+  if (p.p.includes('C')) return 'Viable C with upside. Positional scarcity gives floor value. Lock in before the C run happens.';
+  if (p.p.includes('OF') && p.v >= 50) return 'Elite OF power bat. HR=8 means a 40-HR season = 320 points from HRs alone. Pay up here.';
+  if (p.p.includes('OF') && p.v >= 30) return 'Strong OF. Good HR upside in this scoring system. Check K rate — K=-1 eats into value for strikeout-prone bats.';
+  if (p.p.includes('SP') && p.v >= 28) return 'Ace-tier SP. W=14 is huge — a 15-win season = 210 pts from Ws alone. But SPs carry injury risk; adjust bid accordingly.';
+  if (p.p.includes('SP')) return 'Mid-tier SP. Streaming is viable (3 adds/wk) so only pay fair value. Do not overpay — SP supply exceeds demand in deep drafts.';
+  if (p.p.includes('SS') && p.v >= 35) return 'Elite SS — positional scarcity plus dual eligibility adds roster flexibility. Top-tier value.';
+  return 'Solid contributor. Fills a roster need at fair value. Trust the score and do not overpay chasing upside.';
+}
+
+function valueTag(p, adjV) {
+  const r = adjV > 0 ? (adjV - p.v) / p.v : 0;
+  if (r > 0.15) return '<span class="tag-over">INFLATED</span>';
+  if (r < -0.1) return '<span class="tag-snipe">SNIPE</span>';
+  return '<span class="tag-buy">BUY</span>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RULES ENGINE
+// ═══════════════════════════════════════════════════════════════
+function runRecs() {
+  const avail = available();
+  const b = budget();
+  const sl = slotsLeft();
+  const avgBid = sl > 0 ? Math.floor(b / sl) : 0;
+  const inflation = calcInflation();
+  const inflMult = inflation > 15 ? 1.15 : inflation > 5 ? 1.08 : 1.0;
+
+  const needC = !state.roster[0];
+  const needSP = [12,13,14].filter(i=>!state.roster[i]).length;
+  const needRP = [15,16].filter(i=>!state.roster[i]).length;
+  const needOF = [6,7,8,9].filter(i=>!state.roster[i]).length;
+  const need1B = !state.roster[1];
+  const need2B = !state.roster[2];
+  const need3B = !state.roster[3];
+  const needSS = !state.roster[4];
+
+  function score(p) {
+    const adjV = Math.round(p.v * inflMult);
+    if (adjV > b) return { player: p, score: -99, adjV };
+    let s = p.v * 1.5;
+    if (needC && p.p.includes('C')) s += 20;
+    if (needSP > 0 && p.p.includes('SP')) s += needSP * 5;
+    if (needRP > 0 && p.p.includes('RP')) s += needRP * 9;
+    if (needOF > 0 && p.p.includes('OF')) s += needOF * 4;
+    if (need1B && p.p.includes('1B')) s += 8;
+    if (need2B && p.p.includes('2B')) s += 8;
+    if (need3B && p.p.includes('3B')) s += 8;
+    if (needSS && p.p.includes('SS')) s += 12;
+    if (p.p.includes('RP') && p.v >= 28) s += 15;
+    if (p.p.includes('OF') && p.v >= 40) s += 10;
+    if (p.p.includes('SP') && p.v >= 22) s -= 5;
+    if (adjV > b * 0.4) s -= 15;
+    return { player: p, score: s, adjV };
+  }
+
+  const scored = avail.map(score).sort((a,b) => b.score - a.score);
+  const top = scored[0];
+  const backs = scored.slice(1, 4);
+
+  // Market note
+  const overpays = state.drafted.filter(d => d && d.price > d.v * 1.2).length;
+  const steals = state.drafted.filter(d => d && d.price < d.v * 0.85).length;
+  let mkt = '';
+  if (overpays >= 3) mkt = `INFLATION RUNNING HOT — ${overpays} players went 20%+ over value. Tighten bids, let rivals overbid.`;
+  else if (steals >= 2) mkt = `COLD MARKET — ${steals} recent steals below value. Be aggressive on your targets.`;
+  else if (state.drafted.length < 5) mkt = 'Early draft — let big names go over value. Strike in the middle rounds when inflation cools.';
+  else mkt = 'Market reading normal. Watch for position runs — act decisively when your need tier opens.';
+
+  // Needs list
+  const needs = [];
+  if (needC) needs.push({ label: 'CATCHER', urgent: true, note: 'scarcest position — act before C run' });
+  if (needSS) needs.push({ label: 'SHORTSTOP', urgent: false, note: 'positional depth thins fast' });
+  if (needRP >= 2) needs.push({ label: `RP x${needRP}`, urgent: false, note: 'SV=16 is your highest scoring stat' });
+  if (needSP >= 2) needs.push({ label: `SP x${needSP}`, urgent: false, note: 'stream the rest via waivers' });
+  if (needOF >= 3) needs.push({ label: `OF x${needOF}`, urgent: false, note: 'target HR bats' });
+  if (need1B) needs.push({ label: '1B', urgent: false, note: '' });
+  if (need2B) needs.push({ label: '2B', urgent: false, note: '' });
+  if (need3B) needs.push({ label: '3B', urgent: false, note: '' });
+
+  // Nom suggestions — players worth nominating to drain rival budgets
+  const nomSuggestions = avail
+    .filter(p => p.v >= 32 && p.p.some(x => ['OF','SS','C'].includes(x)))
+    .slice(0, 3)
+    .map(p => `${p.n} ($${p.v}) — nominate to force rivals to pay up or pass`);
+
+  if (!top || top.score < 0) {
+    document.getElementById('recsOutput').innerHTML =
+      `<div class="rec-box"><div class="rec-title">STATUS</div><div class="rec-body">Roster near complete or budget depleted. Review your roster tab.</div></div>`;
+    return;
+  }
+
+  const vc = (() => {
+    const r = (top.adjV - top.player.v) / top.player.v;
+    if (r > 0.15) return `INFLATED — fair value $${top.player.v}, inflation pushing to ~$${top.adjV}. Consider passing.`;
+    if (r < -0.1) return `SNIPE — available below fair value (~$${top.adjV}). Pull the trigger.`;
+    return `BUY — at $${top.adjV} or under this is solid value for your roster.`;
+  })();
+
+  document.getElementById('recsOutput').innerHTML = `
+    <div class="rec-box">
+      <div class="rec-title">🎯 BEST TARGET</div>
+      <div class="rec-highlight">${top.player.n} <span style="color:var(--text2);font-size:11px;font-weight:400">${top.player.t} · ${top.player.p.join('/')}</span></div>
+      <div class="rec-body" style="margin-top:6px">
+        Fair value: <span style="color:var(--amber);font-weight:700">$${top.player.v}</span>
+        &nbsp;·&nbsp; Adj bid: <span style="color:var(--amber);font-weight:700">$${top.adjV}</span>
+        &nbsp;·&nbsp; Yahoo #${top.player.r}
+        &nbsp;&nbsp;${valueTag(top.player, top.adjV)}
+      </div>
+      <div class="rec-body" style="margin-top:6px">${getInsight(top.player)}</div>
+    </div>
+
+    <div class="rec-box">
+      <div class="rec-title">📋 BACKUP OPTIONS</div>
+      <div class="rec-body">
+        ${backs.map(b => {
+          const bg = getBadge(b.player.p);
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #0f172a">
+            <div style="flex:1">
+              <span style="color:var(--text);font-weight:700">${b.player.n}</span>
+              <span style="color:var(--text3);font-size:9px;margin-left:6px">${b.player.t} · ${b.player.p.join('/')}</span>
+            </div>
+            <span class="badge" style="background:${bg.bg};color:${bg.col}">${b.player.p[0]}</span>
+            <span style="color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700">$${b.player.v}</span>
+            ${valueTag(b.player, b.adjV)}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="rec-box">
+      <div class="rec-title">💰 VALUE CALL</div>
+      <div class="rec-body">${vc}</div>
+      ${inflation > 8 ? `<div class="rec-body" style="margin-top:6px;color:var(--amber)">INFLATION +${inflation}% detected across ${state.drafted.length} picks. Adjust all targets up ~${Math.round(inflation)}%.</div>` : ''}
+    </div>
+
+    <div class="rec-box">
+      <div class="rec-title">🏠 TEAM NEEDS — PRIORITY ORDER</div>
+      <div class="rec-body">
+        ${needs.length ? needs.map((n,i) => `<div style="margin-bottom:4px"><span style="color:${i===0?'#ef4444':i===1?'#f59e0b':'var(--text2)'}">
+          ${i+1}. ${n.label}</span>${n.note ? ` <span style="color:var(--text3);font-size:10px">— ${n.note}</span>` : ''}</div>`).join('')
+          : '<span style="color:var(--green)">Team balanced — target BPA (best player available)</span>'}
+      </div>
+      <div class="rec-body" style="margin-top:8px;padding-top:8px;border-top:1px solid #1e293b">
+        Budget: <span style="color:${budget()<40?'var(--red)':budget()<80?'var(--amber)':'var(--green)'}">$${budget()}</span>
+        · ${slotsLeft()} slots left
+        · avg <span style="color:${avgBid<3?'var(--red)':'var(--text2)'}">$${avgBid}/slot</span>
+        ${avgBid < 3 ? ' ⚠ BUDGET DANGER' : ''}
+      </div>
+    </div>
+
+    <div class="rec-box">
+      <div class="rec-title">📊 MARKET NOTE</div>
+      <div class="rec-body">${mkt}</div>
+    </div>
+
+    <div class="rec-box">
+      <div class="rec-title">📌 NOMINATION STRATEGY</div>
+      <div class="rec-body">
+        ${nomSuggestions.length
+          ? nomSuggestions.map(s => `<div style="margin-bottom:4px">→ ${s}</div>`).join('')
+          : 'Hold noms — conserve budget, let others nominate expensive players first.'}
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLAYER ACTIONS
+// ═══════════════════════════════════════════════════════════════
+function buyPlayer() {
+  if (!selPlayer) return;
+  const price = parseInt(document.getElementById('bidPrice').value);
+  if (isNaN(price) || price < 1) return;
+  const idx = findSlot(selPlayer);
+  const newRoster = [...state.roster];
+  if (idx >= 0) newRoster[idx] = { player: selPlayer, price };
+  state.roster = newRoster;
+  state.spent += price;
+  saveState();
+  selPlayer = null;
+  closeSide();
+  updateAll();
+  setTimeout(runRecs, 100);
+}
+
+function logOther() {
+  if (!selPlayer) return;
+  const price = parseInt(document.getElementById('bidPrice').value);
+  if (isNaN(price) || price < 1) return;
+  state.drafted = [...state.drafted, { n: selPlayer.n, t: selPlayer.t, p: selPlayer.p, v: selPlayer.v, r: selPlayer.r, price }];
+  saveState();
+  selPlayer = null;
+  closeSide();
+  updateAll();
+}
+
+function removeFromRoster(i) {
+  const e = state.roster[i];
+  if (!e || !confirm('Remove ' + e.player.n + '?')) return;
+  state.roster[i] = null;
+  state.spent = Math.max(0, state.spent - e.price);
+  saveState();
+  updateAll();
+  renderRoster();
+  runRecs();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GUT OVERRIDE
+// ═══════════════════════════════════════════════════════════════
+function openGut() { document.getElementById('gutModal').style.display = 'flex'; document.getElementById('gutInput').focus(); }
+function closeGut() { document.getElementById('gutModal').style.display = 'none'; document.getElementById('gutResult').style.display = 'none'; }
+function gutFromSide() { if (selPlayer) { document.getElementById('gutInput').value = selPlayer.n; openGut(); runGut(); } }
+
+function runGut() {
+  const name = document.getElementById('gutInput').value.trim();
+  if (!name) return;
+  const p = PLAYERS.find(x => x.n.toLowerCase().includes(name.toLowerCase()));
+  const el = document.getElementById('gutResult');
+  el.style.display = 'block';
+  if (!p) { el.textContent = 'Player not found. Check spelling.'; return; }
+  const b = budget();
+  const inflation = calcInflation();
+  const adjV = Math.round(p.v * (1 + inflation / 100));
+  const maxBid = Math.min(b, Math.round(p.v * 1.3));
+  const isGone = getDraftedSet().has(p.n);
+  const myNeeds = [];
+  if (!state.roster[0] && p.p.includes('C')) myNeeds.push('fills C need');
+  if ([12,13,14].some(i=>!state.roster[i]) && p.p.includes('SP')) myNeeds.push('fills SP slot');
+  if ([15,16].some(i=>!state.roster[i]) && p.p.includes('RP')) myNeeds.push('fills RP slot');
+  if ([6,7,8,9].some(i=>!state.roster[i]) && p.p.includes('OF')) myNeeds.push('fills OF slot');
+  const lines = [
+    `GUT OVERRIDE: ${p.n} (${p.t}, ${p.p.join('/')})`,
+    isGone ? '⚠  ALREADY DRAFTED — analysis for reference only' : '',
+    '',
+    `Fair value:    $${p.v}`,
+    `Inflation adj: $${adjV}`,
+    `Max bid:       $${maxBid} (130% fair value)`,
+    '',
+    '--- THE CASE FOR ---',
+    p.p.includes('RP') && p.v >= 25 ? `• Elite closer. SV=16 is the #1 scoring stat. Worth going to $${maxBid}.` : '',
+    p.p.includes('C') && p.v >= 20 ? `• Premium catcher. C scarcity means this hurts rivals all season.` : '',
+    p.p.includes('OF') && p.v >= 40 ? `• Power bat. HR=8 means 40 HRs = 320 pts from HRs alone. Hard to find.` : '',
+    p.p.includes('SP') && p.v >= 28 ? `• Ace-level starter. W=14 is huge — even 13 wins = 182 pts.` : '',
+    myNeeds.length ? `• Roster fit: ${myNeeds.join(', ')}` : '• Gut feel is valid — sometimes the intangibles matter.',
+    p.v >= 35 ? `• Top-tier talent tends to outperform projections. Trust the upside.` : '',
+    '',
+    '--- VERDICT ---',
+    b >= maxBid
+      ? `Budget OK ($${b} available). Pull trigger at $${maxBid} or under.`
+      : `⚠  Budget tight ($${b}). Max safe bid is $${b}. Only go here if it's a must-have.`
+  ].filter(l => l !== null && l !== undefined && l !== false && l !== '');
+  el.textContent = lines.join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+function renderPlayers() {
+  const search = (document.getElementById('search').value || '').toLowerCase();
+  const pos = document.getElementById('posFilter').value;
+  const avail = available().filter(p => {
+    const mp = pos === 'ALL' || p.p.includes(pos);
+    const ms = !search || p.n.toLowerCase().includes(search) || p.t.toLowerCase().includes(search);
+    return mp && ms;
+  });
+  document.getElementById('availCount').textContent = avail.length + ' available';
+  document.getElementById('playerList').innerHTML = avail.map(p => {
+    const b = getBadge(p.p);
+    const sel = selPlayer && selPlayer.n === p.n;
+    return `<div class="player-row${sel?' sel':''}" onclick='selectPlayer(${JSON.stringify(p)})'>
+      <span style="color:var(--text4);font-size:9px;min-width:26px">#${p.r}</span>
+      <div style="flex:1">
+        <span style="font-weight:700">${p.n}</span>
+        <span style="color:var(--text3);font-size:9px;margin-left:6px">${p.t}</span>
+      </div>
+      <span class="badge" style="background:${b.bg};color:${b.col}">${p.p.join('/')}</span>
+      <span style="color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;min-width:34px;text-align:right">$${p.v}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectPlayer(p) {
+  selPlayer = p;
+  document.getElementById('sidePanel').style.display = 'flex';
+  document.getElementById('spName').textContent = p.n;
+  document.getElementById('spMeta').textContent = p.t + ' · ' + p.p.join('/') + ' · Yahoo #' + p.r;
+  document.getElementById('spVal').textContent = '$' + p.v;
+  document.getElementById('spInsight').textContent = getInsight(p);
+  document.getElementById('bidPrice').value = '';
+  renderPlayers();
+}
+
+function closeSide() {
+  selPlayer = null;
+  document.getElementById('sidePanel').style.display = 'none';
+  renderPlayers();
+}
+
+function addNomFromSide() {
+  if (!selPlayer) return;
+  if (!state.noms.find(n => n.n === selPlayer.n)) state.noms.push(selPlayer);
+  saveState();
+  renderNoms();
+}
+
+function renderRoster() {
+  const b = budget(); const sl = slotsLeft();
+  document.getElementById('rosterGrid').innerHTML = SLOTS.map((slot, i) => {
+    const e = state.roster[i];
+    if (e) {
+      const bg = getBadge(e.player.p);
+      return `<div class="slot-f">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:9px;font-weight:700;color:var(--text4);min-width:30px">${slot.lbl}</span>
+          <div>
+            <div style="font-weight:700;font-size:12px">${e.player.n}</div>
+            <div style="font-size:9px;color:var(--text3)">${e.player.t} · <span class="badge" style="background:${bg.bg};color:${bg.col};font-size:8px">${e.player.p.join('/')}</span> · #${e.player.r}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700">$${e.price}</span>
+          <button onclick="removeFromRoster(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0;line-height:1">×</button>
+        </div>
+      </div>`;
+    }
+    return `<div class="slot-e">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:9px;font-weight:700;color:var(--text4);min-width:30px">${slot.lbl}</span>
+        <span style="color:#1e293b;font-size:10px">— empty —</span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('rosterStats').innerHTML = `
+    <span>SPENT: <b style="color:var(--red)">$${state.spent}</b></span>
+    <span>REMAINING: <b style="color:var(--green)">$${b}</b></span>
+    <span>SLOTS: <b style="color:var(--text2)">${filledSlots()}/22</b></span>
+    ${sl > 0 ? `<span>AVG/SLOT: <b style="color:${b/sl<2?'var(--red)':'var(--text2)'}">\$${Math.floor(b/sl)}</b></span>` : ''}
+  `;
+}
+
+function renderNoms() {
+  const el = document.getElementById('nomList');
+  if (!state.noms.length) {
+    el.innerHTML = '<div style="color:var(--text4);text-align:center;padding:30px;font-size:11px">No nominations queued — add players or hit AUTO-SUGGEST</div>';
+    return;
+  }
+  el.innerHTML = state.noms.map((p, i) => {
+    const b = getBadge(p.p);
+    return `<div class="nom-row">
+      <span style="color:var(--blue);font-family:'Barlow Condensed',sans-serif;font-size:18px;min-width:22px">${i+1}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:12px">${p.n}</div>
+        <div style="font-size:9px;color:var(--text3)">${p.t} · #${p.r}</div>
+      </div>
+      <span class="badge" style="background:${b.bg};color:${b.col}">${p.p.join('/')}</span>
+      <span style="color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700">$${p.v}</span>
+      <button class="btn-gut" style="font-size:9px;padding:3px 8px" onclick="gutNom(${i})">GUT</button>
+      <button onclick="removeNom(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0;line-height:1">×</button>
+    </div>`;
+  }).join('');
+}
+
+function renderLog() {
+  const el = document.getElementById('logList');
+  if (!state.drafted.length) {
+    el.innerHTML = '<div style="color:var(--text4);text-align:center;padding:30px;font-size:11px">No players logged yet</div>';
+    return;
+  }
+  el.innerHTML = state.drafted.filter(Boolean).map((d, i) => {
+    const ov = d.price > d.v;
+    const b = getBadge(d.p || []);
+    const diff = Math.abs(d.price - d.v);
+    return `<div class="log-row">
+      <span style="color:var(--text4);font-size:9px;min-width:22px">${i+1}</span>
+      <div style="flex:1">
+        <span style="color:var(--text2)">${d.n}</span>
+        <span style="color:var(--text3);font-size:9px;margin-left:6px">${d.t || ''}</span>
+      </div>
+      <span class="badge" style="background:${b.bg};color:${b.col}">${(d.p||[]).join('/')}</span>
+      <span style="color:${ov?'var(--red)':'var(--green)'};font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;min-width:34px;text-align:right">$${d.price}</span>
+      <span style="font-size:9px;color:var(--text4);min-width:42px">val $${d.v}</span>
+      <span style="font-size:9px;color:${ov?'var(--red)':'var(--green)'};min-width:52px">${ov?'+$'+diff+' OVER':'-$'+diff+' STEAL'}</span>
+    </div>`;
+  }).join('');
+}
+
+function addNomBySearch() {
+  const v = document.getElementById('nomSearch').value.trim();
+  if (!v) return;
+  const p = PLAYERS.find(x => x.n.toLowerCase().includes(v.toLowerCase()));
+  if (p && !state.noms.find(n => n.n === p.n)) {
+    state.noms.push(p);
+    saveState();
+    renderNoms();
+    document.getElementById('nomSearch').value = '';
+  }
+}
+
+function suggestNoms() {
+  const avail = available();
+  const suggestions = avail.filter(p => p.v >= 32 && p.p.some(x => ['OF','SS','C','RP'].includes(x))).slice(0, 5);
+  suggestions.forEach(p => { if (!state.noms.find(n => n.n === p.n)) state.noms.push(p); });
+  saveState();
+  renderNoms();
+}
+
+function gutNom(i) {
+  document.getElementById('gutInput').value = state.noms[i].n;
+  openGut();
+  runGut();
+}
+
+function removeNom(i) {
+  state.noms.splice(i, 1);
+  saveState();
+  renderNoms();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABS & TOP BAR
+// ═══════════════════════════════════════════════════════════════
+function setTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  document.querySelectorAll('#app > .content > [id^=tab-]').forEach(el => {
+    el.style.display = 'none';
+    el.style.flexDirection = '';
+  });
+  const el = document.getElementById('tab-' + name);
+  if (!el) return;
+  if (name === 'players') { el.style.display = 'flex'; el.style.flexDirection = 'column'; }
+  else { el.style.display = 'block'; }
+  if (name === 'players') renderPlayers();
+  if (name === 'roster') renderRoster();
+  if (name === 'noms') renderNoms();
+  if (name === 'log') renderLog();
+}
+
+function updateTopBar() {
+  const b = budget(); const sl = slotsLeft();
+  const budEl = document.getElementById('topBudget');
+  budEl.textContent = '$' + b;
+  budEl.style.color = b < 30 ? 'var(--red)' : b < 70 ? 'var(--amber)' : 'var(--green)';
+  document.getElementById('topSlots').textContent = sl;
+  document.getElementById('topLogged').textContent = state.drafted.length;
+  const wb = document.getElementById('warnBar');
+  if (sl > 0 && b < sl * 2) {
+    wb.style.display = 'block';
+    wb.textContent = '⚠ BUDGET DANGER — $' + b + ' left · ' + sl + ' slots · avg $' + Math.floor(b/sl) + '/slot';
+  } else {
+    wb.style.display = 'none';
+  }
+}
+
+function updateTicker() {
+  const avail = available().slice(0, 18);
+  const t = avail.map(p => p.n + ' $' + p.v).join('   ·   ');
+  const el = document.getElementById('tickerEl');
+  if (el) el.textContent = t + '          ' + t;
+}
+
+function updateAll() {
+  updateTopBar();
+  updateTicker();
+  const active = document.querySelector('.tab.on');
+  if (active) {
+    const name = active.getAttribute('data-tab');
+    if (name === 'players') renderPlayers();
+    if (name === 'roster') renderRoster();
+    if (name === 'noms') renderNoms();
+    if (name === 'log') renderLog();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TEST MODE & RESET
+// ═══════════════════════════════════════════════════════════════
+function loadTest() {
+  const r = Array(22).fill(null);
+  const judge = PLAYERS.find(p => p.n === 'Aaron Judge');
+  const jose = PLAYERS.find(p => p.n === 'Jose Ramirez');
+  const rut = PLAYERS.find(p => p.n === 'Adley Rutschman');
+  const helsley = PLAYERS.find(p => p.n === 'Ryan Helsley');
+  if (judge) r[6] = { player: judge, price: 52 };
+  if (jose) r[3] = { player: jose, price: 42 };
+  if (rut) r[0] = { player: rut, price: 28 };
+  if (helsley) r[15] = { player: helsley, price: 30 };
+  const clase = PLAYERS.find(p => p.n === 'Emmanuel Clase');
+  const hader = PLAYERS.find(p => p.n === 'Josh Hader');
+  const acuna = PLAYERS.find(p => p.n === 'Ronald Acuña Jr.');
+  const ohtani = PLAYERS.find(p => p.n === 'Shohei Ohtani');
+  state = {
+    roster: r,
+    drafted: [
+      acuna ? { n:acuna.n,t:acuna.t,p:acuna.p,v:acuna.v,r:acuna.r,price:74 } : null,
+      ohtani ? { n:ohtani.n,t:ohtani.t,p:ohtani.p,v:ohtani.v,r:ohtani.r,price:70 } : null,
+      clase ? { n:clase.n,t:clase.t,p:clase.p,v:clase.v,r:clase.r,price:40 } : null,
+      hader ? { n:hader.n,t:hader.t,p:hader.p,v:hader.v,r:hader.r,price:36 } : null,
+    ].filter(Boolean),
+    noms: [],
+    spent: 152,
+    _ts: Date.now()
+  };
+  saveState();
+  updateAll();
+  runRecs();
+}
+
+function resetDraft() {
+  if (!confirm('Reset all draft data? This cannot be undone.')) return;
+  state = { roster: Array(22).fill(null), drafted: [], noms: [], spent: 0, _ts: Date.now() };
+  saveState();
+  updateAll();
+  document.getElementById('recsOutput').innerHTML =
+    '<div style="color:var(--text4);text-align:center;padding:40px;font-family:\'Barlow Condensed\',sans-serif;font-size:20px;letter-spacing:.08em">DRAFT RESET</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROOM MODAL
+// ═══════════════════════════════════════════════════════════════
+function openRoomModal() {
+  document.getElementById('roomInput').value = currentRoom;
+  document.getElementById('roomStatus').style.display = 'none';
+  document.getElementById('roomModal').style.display = 'flex';
+  document.getElementById('roomInput').focus();
+}
+function closeRoomModal() { document.getElementById('roomModal').style.display = 'none'; }
+function changeRoom() {
+  const room = document.getElementById('roomInput').value.trim();
+  if (!room) return;
+  const statusEl = document.getElementById('roomStatus');
+  statusEl.style.display = 'block';
+  statusEl.style.color = 'var(--text2)';
+  statusEl.textContent = 'Connecting to room: ' + room + '...';
+  lastFbTs = 0;
+  state = { roster: Array(22).fill(null), drafted: [], noms: [], spent: 0, _ts: 0 };
+  updateAll();
+  const ok = initFirebase(room);
+  if (ok) {
+    statusEl.style.color = 'var(--green)';
+    statusEl.textContent = 'Connected to room: ' + room;
+    setTimeout(closeRoomModal, 600);
+  } else {
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = 'Failed to connect. Falling back to local mode.';
+    localMode();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT — auto-connect Firebase, fall back to local
+// ═══════════════════════════════════════════════════════════════
+updateTicker();
+try {
+  const ok = initFirebase();
+  if (!ok) localMode();
+} catch(e) {
+  console.warn('Auto-connect failed, using local mode:', e);
+  localMode();
+}
+</script>
+</body>
+</html>
