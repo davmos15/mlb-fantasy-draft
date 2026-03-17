@@ -112,14 +112,33 @@
   .tag-snipe{background:#064e3b;color:#6ee7b7;padding:1px 6px;font-size:9px;font-weight:700}
   .tag-over{background:#3b1f5e;color:#c4b5fd;padding:1px 6px;font-size:9px;font-weight:700}
 
+  /* CLICKABLE REC PLAYER */
+  .rec-player-link{cursor:pointer;border-bottom:1px dashed var(--text4);transition:all .15s}
+  .rec-player-link:hover{color:var(--blue);border-bottom-color:var(--blue)}
+
+  /* GEAR MENU */
+  #gearBtn{display:none;background:none;border:1px solid var(--border);color:var(--text2);width:32px;height:32px;cursor:pointer;border-radius:2px;font-size:16px;line-height:1;flex-shrink:0;transition:all .15s}
+  #gearBtn:hover{border-color:var(--blue);color:var(--blue)}
+  #gearMenu{display:none;position:absolute;top:46px;right:6px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:4px 0;z-index:150;min-width:140px;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+  #gearMenu.open{display:block}
+  .gear-item{display:block;width:100%;background:none;border:none;color:var(--text2);padding:10px 16px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;text-align:left;transition:all .1s}
+  .gear-item:hover{background:var(--bg3);color:var(--text)}
+  .gear-item.red{color:#fca5a5}
+  .gear-item.red:hover{background:var(--red-dark);color:#fca5a5}
+  .desk-only{}
+
   /* MONEY RAIN */
   @keyframes moneyFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
 
   @media(max-width:600px){
-    .topbar{padding:0 6px;gap:6px;height:42px;flex-wrap:nowrap;overflow-x:auto}
+    .topbar{padding:0 8px;gap:6px;height:44px;flex-wrap:nowrap;position:relative}
     .logo{font-size:16px}
-    .stat-grp{gap:8px}
-    .stat .val{font-size:15px}
+    .desk-only{display:none!important}
+    #gearBtn{display:inline-flex;align-items:center;justify-content:center}
+    #gearMenu{top:44px}
+    .stat-grp{gap:10px}
+    .stat .val{font-size:16px}
+    .stat .lbl{font-size:7px}
     .tabs{padding:0 2px}
     .tab{padding:6px 8px;font-size:9px}
     .content{flex:1;min-height:0;overflow:hidden}
@@ -141,17 +160,23 @@
   <!-- TOP BAR -->
   <div class="topbar">
     <span class="logo">⚡ MLB DRAFT OPS</span>
-    <span style="color:#1e3a5f;font-size:9px">H2H·12-TEAM·$260</span>
+    <span class="desk-only" style="color:#1e3a5f;font-size:9px">H2H·12-TEAM·$260</span>
     <div style="flex:1"></div>
     <div class="stat-grp">
       <div class="stat"><div class="lbl">BUDGET</div><div class="val" id="topBudget" style="color:var(--green)">$260</div></div>
-      <div class="stat"><div class="lbl">SLOTS LEFT</div><div class="val" id="topSlots" style="color:var(--text2)">22</div></div>
-      <div class="stat"><div class="lbl">LOGGED</div><div class="val" id="topLogged" style="color:var(--text3)">0</div></div>
+      <div class="stat"><div class="lbl">SLOTS</div><div class="val" id="topSlots" style="color:var(--text2)">22</div></div>
+      <div class="stat"><div class="lbl">LOG</div><div class="val" id="topLogged" style="color:var(--text3)">0</div></div>
     </div>
     <span id="syncBadge">LOCAL</span>
-    <button class="btn-g" style="font-size:9px" onclick="openRoomModal()">ROOM</button>
-    <button class="btn-g" style="font-size:9px" onclick="loadTest()">TEST</button>
-    <button class="btn-r" style="font-size:9px;margin-left:4px" onclick="resetDraft()">RESET</button>
+    <button class="btn-g desk-only" style="font-size:9px" onclick="openRoomModal()">ROOM</button>
+    <button class="btn-g desk-only" style="font-size:9px" onclick="loadTest()">TEST</button>
+    <button class="btn-r desk-only" style="font-size:9px;margin-left:4px" onclick="resetDraft()">RESET</button>
+    <button id="gearBtn" onclick="toggleGearMenu(event)">&#9881;</button>
+    <div id="gearMenu">
+      <button class="gear-item" onclick="openRoomModal();closeGearMenu()">&#128279; Room</button>
+      <button class="gear-item" onclick="loadTest();closeGearMenu()">&#9654; Test Data</button>
+      <button class="gear-item red" onclick="resetDraft();closeGearMenu()">&#10060; Reset Draft</button>
+    </div>
   </div>
 
   <!-- WARN BAR -->
@@ -255,6 +280,28 @@
       <div style="display:flex;gap:8px">
         <button class="btn-p" style="flex:1" onclick="changeRoom()">CONNECT</button>
         <button class="btn-g" onclick="closeRoomModal()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAYER ACTION MODAL -->
+  <div class="modal-overlay" id="playerModal" style="display:none" onclick="if(event.target===this)closePlayerModal()">
+    <div class="modal-card">
+      <div id="pmName" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700"></div>
+      <div id="pmMeta" style="color:var(--text3);font-size:10px;margin-bottom:6px"></div>
+      <div style="padding:6px 10px;background:var(--bg3);border:1px solid var(--sp-bg);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:9px;color:var(--text3)">FAIR VALUE</span>
+        <span id="pmVal" style="font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:700;color:var(--amber)"></span>
+      </div>
+      <div id="pmInsight" style="background:#07120f;border:1px solid #065f46;padding:8px;font-size:10px;color:var(--text2);line-height:1.65;border-radius:3px;margin-bottom:8px"></div>
+      <div style="font-size:9px;color:var(--text3);letter-spacing:.08em;margin-bottom:4px">WINNING BID $</div>
+      <input type="number" id="pmBidPrice" min="1" max="260" placeholder="Enter price..." style="margin-bottom:8px" onkeydown="if(event.key==='Enter')buyFromModal()"/>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn-p" style="width:100%;padding:9px" onclick="buyFromModal()">&#10003; I WON THIS PLAYER</button>
+        <button class="btn-g" style="width:100%" onclick="logOtherFromModal()">OTHER TEAM GOT THIS</button>
+        <button class="btn-gut" style="width:100%" onclick="gutFromModal()">&#128293; GUT OVERRIDE</button>
+        <button class="btn-g" style="width:100%" onclick="nomFromModal()">+ ADD TO NOM QUEUE</button>
+        <button onclick="closePlayerModal()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-family:inherit;font-size:10px;text-align:center;margin-top:2px">&#215; close</button>
       </div>
     </div>
   </div>
@@ -576,6 +623,8 @@ function findSlot(player) {
   return -1;
 }
 
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+
 function getBadge(pos) {
   if (pos.includes('SP')) return { bg: 'var(--sp-bg)', col: 'var(--sp-col)' };
   if (pos.includes('RP')) return { bg: 'var(--rp-bg)', col: 'var(--rp-col)' };
@@ -696,7 +745,7 @@ function runRecs() {
   document.getElementById('recsOutput').innerHTML = `
     <div class="rec-box">
       <div class="rec-title">🎯 BEST TARGET</div>
-      <div class="rec-highlight">${top.player.n} <span style="color:var(--text2);font-size:11px;font-weight:400">${top.player.t} · ${top.player.p.join('/')}</span></div>
+      <div class="rec-highlight"><span class="rec-player-link" onclick="openPlayerModal('${escHtml(top.player.n)}')">${top.player.n}</span> <span style="color:var(--text2);font-size:11px;font-weight:400">${top.player.t} · ${top.player.p.join('/')}</span></div>
       <div class="rec-body" style="margin-top:6px">
         Fair value: <span style="color:var(--amber);font-weight:700">$${top.player.v}</span>
         &nbsp;·&nbsp; Adj bid: <span style="color:var(--amber);font-weight:700">$${top.adjV}</span>
@@ -713,7 +762,7 @@ function runRecs() {
           const bg = getBadge(b.player.p);
           return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #0f172a">
             <div style="flex:1">
-              <span style="color:var(--text);font-weight:700">${b.player.n}</span>
+              <span class="rec-player-link" style="color:var(--text);font-weight:700" onclick="openPlayerModal('${escHtml(b.player.n)}')">${b.player.n}</span>
               <span style="color:var(--text3);font-size:9px;margin-left:6px">${b.player.t} · ${b.player.p.join('/')}</span>
             </div>
             <span class="badge" style="background:${bg.bg};color:${bg.col}">${b.player.p[0]}</span>
@@ -864,6 +913,91 @@ function runGut() {
   ].filter(l => l !== null && l !== undefined && l !== false && l !== '');
   el.textContent = lines.join('\n');
 }
+
+// ═══════════════════════════════════════════════════════════════
+// PLAYER ACTION MODAL
+// ═══════════════════════════════════════════════════════════════
+let _modalPlayer = null;
+
+function openPlayerModal(name) {
+  const p = PLAYERS.find(x => x.n === name);
+  if (!p) return;
+  _modalPlayer = p;
+  selPlayer = p;
+  document.getElementById('pmName').textContent = p.n;
+  document.getElementById('pmMeta').textContent = p.t + ' · ' + p.p.join('/') + ' · Yahoo #' + p.r;
+  document.getElementById('pmVal').textContent = '$' + p.v;
+  document.getElementById('pmInsight').textContent = getInsight(p);
+  document.getElementById('pmBidPrice').value = '';
+  document.getElementById('playerModal').style.display = 'flex';
+  document.getElementById('pmBidPrice').focus();
+}
+
+function closePlayerModal() {
+  document.getElementById('playerModal').style.display = 'none';
+  _modalPlayer = null;
+}
+
+function buyFromModal() {
+  if (!_modalPlayer) return;
+  const price = parseInt(document.getElementById('pmBidPrice').value);
+  if (isNaN(price) || price < 1) return;
+  selPlayer = _modalPlayer;
+  const idx = findSlot(selPlayer);
+  const newRoster = [...state.roster];
+  if (idx >= 0) newRoster[idx] = { player: selPlayer, price };
+  state.roster = newRoster;
+  state.spent += price;
+  saveState();
+  moneyRain();
+  selPlayer = null;
+  closePlayerModal();
+  updateAll();
+  setTimeout(runRecs, 100);
+}
+
+function logOtherFromModal() {
+  if (!_modalPlayer) return;
+  const price = parseInt(document.getElementById('pmBidPrice').value);
+  if (isNaN(price) || price < 1) return;
+  state.drafted = [...state.drafted, { n: _modalPlayer.n, t: _modalPlayer.t, p: _modalPlayer.p, v: _modalPlayer.v, r: _modalPlayer.r, price }];
+  saveState();
+  selPlayer = null;
+  closePlayerModal();
+  updateAll();
+  setTimeout(runRecs, 100);
+}
+
+function gutFromModal() {
+  if (!_modalPlayer) return;
+  document.getElementById('gutInput').value = _modalPlayer.n;
+  closePlayerModal();
+  openGut();
+  runGut();
+}
+
+function nomFromModal() {
+  if (!_modalPlayer) return;
+  if (!state.noms.find(n => n.n === _modalPlayer.n)) {
+    state.noms.push(_modalPlayer);
+    saveState();
+  }
+  closePlayerModal();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GEAR MENU
+// ═══════════════════════════════════════════════════════════════
+function toggleGearMenu(e) {
+  e.stopPropagation();
+  document.getElementById('gearMenu').classList.toggle('open');
+}
+function closeGearMenu() {
+  document.getElementById('gearMenu').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#gearBtn') && !e.target.closest('#gearMenu')) closeGearMenu();
+});
 
 // ═══════════════════════════════════════════════════════════════
 // RENDER FUNCTIONS
