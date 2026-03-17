@@ -18,7 +18,7 @@ Open `index.html` in any browser. The app auto-connects to Firebase on load — 
 
 ### Live URL
 
-Deployed via GitHub Pages: **https://&lt;your-username&gt;.github.io/mlb-fantasy-draft/**
+Deployed via GitHub Pages: **https://davmos15.github.io/mlb-fantasy-draft/**
 
 ### Change Draft Room
 
