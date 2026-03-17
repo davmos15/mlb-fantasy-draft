@@ -279,34 +279,48 @@
     <div class="ticker-wrap">
       <div class="ticker" id="tickerEl"></div>
     </div>
-    <a href="https://buymeacoffee.com/nadavmoskow" target="_blank" rel="noopener" style="color:var(--text4);text-decoration:none;white-space:nowrap;font-size:9px;transition:color .15s" onmouseover="this.style.color='var(--text3)'" onmouseout="this.style.color='var(--text4)'">☕ Support</a>
+    <a href="https://buymeacoffee.com/nadavmoskow" target="_blank" rel="noopener" style="color:var(--amber);text-decoration:none;white-space:nowrap;font-size:9px;opacity:.7;transition:opacity .15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">☕ Buy Me a Coffee</a>
   </div>
 
   <!-- ROOM CHANGE MODAL -->
   <div class="modal-overlay" id="roomModal" style="display:none">
     <div class="modal-card">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--blue);margin-bottom:8px">CHANGE DRAFT ROOM</div>
-      <div style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.6">Enter a different room ID to switch drafts. Both devices must use the same room ID.</div>
-      <div class="field-label">ROOM ID</div>
-      <input id="roomInput" placeholder="e.g. nadav2025" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')changeRoom()"/>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.6">Enter a room name to create or join a draft. Share the link so league-mates auto-join your room.</div>
+      <div class="field-label">ROOM NAME</div>
+      <input id="roomInput" placeholder="e.g. my-league-2026" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')changeRoom()"/>
+      <div id="roomShareLink" style="display:none;margin-bottom:10px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:2px;font-size:9px;align-items:center;gap:6px">
+        <span style="color:var(--text3)">SHARE:</span>
+        <span id="roomShareUrl" style="color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <button class="btn-g" style="padding:3px 8px;font-size:8px" onclick="copyShareLink()">COPY</button>
+      </div>
       <div id="roomStatus" style="font-size:10px;margin-bottom:10px;display:none"></div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
         <button class="btn-p" style="flex:1" onclick="changeRoom()">CONNECT</button>
         <button class="btn-g" onclick="closeRoomModal()">CANCEL</button>
+      </div>
+      <div style="text-align:center;border-top:1px solid var(--border);padding-top:10px">
+        <a href="https://buymeacoffee.com/nadavmoskow" target="_blank" rel="noopener" style="color:var(--amber);text-decoration:none;font-size:10px;transition:color .15s" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color='var(--amber)'">☕ Enjoying Draft Ops? Buy me a coffee</a>
       </div>
     </div>
   </div>
 
   <!-- WELCOME MODAL (first visit) -->
   <div class="modal-overlay" id="welcomeModal" style="display:none">
-    <div class="modal-card" style="width:380px">
+    <div class="modal-card" style="width:400px">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--blue);margin-bottom:6px;letter-spacing:.04em">WELCOME TO MLB DRAFT OPS</div>
       <div style="font-size:10px;color:var(--text2);line-height:1.7;margin-bottom:14px">
-        A <span style="color:var(--text)">draft room</span> keeps your roster, picks, and budget in sync across devices in real time. Share the same room name with your league-mates so everyone sees the same board.
+        A <span style="color:var(--text)">draft room</span> keeps your roster, picks, and budget in sync across devices in real time. Create a new room or join an existing one — share the link so your league-mates see the same board.
       </div>
       <div class="field-label">ROOM NAME</div>
       <input id="welcomeRoomInput" placeholder="e.g. my-league-2026" style="margin-bottom:12px" onkeydown="if(event.key==='Enter')createRoom()"/>
-      <button class="btn-p" style="width:100%;padding:10px;font-size:11px" onclick="createRoom()">CREATE ROOM</button>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn-p" style="flex:1;padding:10px;font-size:11px" onclick="createRoom()">CREATE ROOM</button>
+        <button class="btn-p" style="flex:1;padding:10px;font-size:11px;background:#065f46" onclick="createRoom()" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#065f46'">JOIN ROOM</button>
+      </div>
+      <div style="text-align:center;border-top:1px solid var(--border);padding-top:10px">
+        <a href="https://buymeacoffee.com/nadavmoskow" target="_blank" rel="noopener" style="color:var(--amber);text-decoration:none;font-size:10px;transition:color .15s" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color='var(--amber)'">☕ Enjoying Draft Ops? Buy me a coffee</a>
+      </div>
     </div>
   </div>
 
@@ -1636,15 +1650,41 @@ function resetDraft() {
 function openRoomModal() {
   document.getElementById('roomInput').value = currentRoom;
   document.getElementById('roomStatus').style.display = 'none';
+  updateShareLink(currentRoom);
   document.getElementById('roomModal').style.display = 'flex';
   document.getElementById('roomInput').focus();
 }
 function closeRoomModal() { document.getElementById('roomModal').style.display = 'none'; }
+function getShareUrl(room) {
+  return location.origin + location.pathname + '?room=' + encodeURIComponent(room);
+}
+function updateShareLink(room) {
+  const el = document.getElementById('roomShareLink');
+  const urlEl = document.getElementById('roomShareUrl');
+  if (el && urlEl) {
+    urlEl.textContent = getShareUrl(room);
+    el.style.display = 'flex';
+  }
+}
+function copyShareLink() {
+  const url = document.getElementById('roomShareUrl').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = event.target;
+    btn.textContent = 'COPIED!';
+    setTimeout(() => btn.textContent = 'COPY', 1500);
+  });
+}
+function setRoomUrlParam(room) {
+  const url = new URL(location);
+  url.searchParams.set('room', room);
+  history.replaceState(null, '', url);
+}
 function createRoom() {
   const room = document.getElementById('welcomeRoomInput').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
   if (!room) return;
   localStorage.setItem('mlb_draft_room', room);
   document.getElementById('welcomeModal').style.display = 'none';
+  setRoomUrlParam(room);
   const ok = initFirebase(room);
   if (!ok) localMode();
 }
@@ -1661,6 +1701,8 @@ function changeRoom() {
   const ok = initFirebase(room);
   if (ok) {
     localStorage.setItem('mlb_draft_room', room);
+    setRoomUrlParam(room);
+    updateShareLink(room);
     statusEl.style.color = 'var(--green)';
     statusEl.textContent = 'Connected to room: ' + room;
     setTimeout(closeRoomModal, 600);
@@ -1675,8 +1717,10 @@ function changeRoom() {
 // INIT — auto-connect Firebase, fall back to local
 // ═══════════════════════════════════════════════════════════════
 updateTicker();
-const savedRoom = localStorage.getItem('mlb_draft_room');
+const urlRoom = new URLSearchParams(location.search).get('room');
+const savedRoom = urlRoom || localStorage.getItem('mlb_draft_room');
 if (savedRoom) {
+  if (urlRoom) localStorage.setItem('mlb_draft_room', urlRoom);
   try {
     const ok = initFirebase(savedRoom);
     if (!ok) localMode();
