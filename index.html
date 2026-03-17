@@ -348,7 +348,7 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// PLAYER DATA — 280 players, 2025 Yahoo Rankings
+// PLAYER DATA — 2026 Yahoo Rankings (deduped via Map)
 // ═══════════════════════════════════════════════════════════════
 const PLAYERS_RAW = [
   {r:1,n:'Ronald Acuña Jr.',t:'ATL',p:['OF'],v:75},{r:2,n:'Shohei Ohtani',t:'LAD',p:['DH','SP'],v:72},
@@ -428,8 +428,7 @@ const PLAYERS_RAW = [
   {r:149,n:'Kodai Senga',t:'NYM',p:['SP'],v:20},{r:150,n:'Chris Bassitt',t:'TOR',p:['SP'],v:14},
   {r:151,n:'Kyle Bradish',t:'BAL',p:['SP'],v:16},{r:152,n:'Carlos Rodón',t:'NYY',p:['SP'],v:16},
   {r:153,n:'Merrill Kelly',t:'ARI',p:['SP'],v:12},{r:154,n:'Reese Olson',t:'DET',p:['SP'],v:14},
-  {r:155,n:'Mitch Keller',t:'PIT',p:['SP'],v:16},{r:156,n:'Freddy Peralta',t:'MIL',p:['SP'],v:16},
-  {r:157,n:'Nick Pivetta',t:'BOS',p:['SP'],v:10},{r:158,n:'Vinnie Pasquantino',t:'KC',p:['1B','DH'],v:14},
+  {r:158,n:'Vinnie Pasquantino',t:'KC',p:['1B','DH'],v:14},
   {r:159,n:'Triston Casas',t:'BOS',p:['1B'],v:20},{r:160,n:'Christian Walker',t:'HOU',p:['1B'],v:20},
   {r:161,n:'Ryan Mountcastle',t:'BAL',p:['1B'],v:16},{r:162,n:'Nathaniel Lowe',t:'TEX',p:['1B'],v:24},
   {r:163,n:'Rhys Hoskins',t:'MIL',p:['1B'],v:16},{r:164,n:'Spencer Torkelson',t:'DET',p:['1B','DH'],v:14},
@@ -451,7 +450,7 @@ const PLAYERS_RAW = [
   {r:195,n:'Chas McCormick',t:'HOU',p:['OF'],v:16},{r:196,n:'Cedric Mullins',t:'BAL',p:['OF'],v:14},
   {r:197,n:'Adam Duvall',t:'BOS',p:['OF'],v:10},{r:198,n:'Kerry Carpenter',t:'DET',p:['OF','DH'],v:12},
   {r:199,n:'Esteury Ruiz',t:'OAK',p:['OF','2B'],v:12},{r:200,n:'Max Kepler',t:'MIN',p:['OF'],v:10},
-  {r:201,n:'Eloy Jiménez',t:'CWS',p:['OF','DH'],v:10},{r:202,n:'Tommy Edman',t:'LAD',p:['2B','SS','OF'],v:18},
+  {r:201,n:'Eloy Jiménez',t:'CWS',p:['OF','DH'],v:10},
   {r:203,n:'Dylan Moore',t:'SEA',p:['2B','SS','OF'],v:10},{r:204,n:'Brendan Donovan',t:'STL',p:['2B','3B','OF'],v:12},
   {r:205,n:'Thairo Estrada',t:'SF',p:['2B','SS'],v:10},{r:206,n:'Xavier Edwards',t:'MIA',p:['2B','SS'],v:10},
   {r:207,n:'Tyler Soderstrom',t:'OAK',p:['C','DH'],v:12},{r:208,n:'Kevin Parada',t:'NYM',p:['C'],v:10},
@@ -482,13 +481,9 @@ const PLAYERS_RAW = [
   {r:257,n:'Ji Hwan Bae',t:'PIT',p:['2B','OF'],v:8},{r:258,n:'Gavin Lux',t:'LAD',p:['2B','SS'],v:10},
   {r:259,n:'Tyler Freeman',t:'CLE',p:['SS','2B','3B'],v:8},{r:260,n:'Rowdy Tellez',t:'MIL',p:['1B'],v:8},
   {r:261,n:'Elias Díaz',t:'COL',p:['C'],v:8},{r:262,n:'Blake Sabol',t:'SF',p:['C','OF'],v:8},
-  {r:263,n:'Heliot Ramos',t:'SF',p:['OF'],v:12},{r:264,n:'Jake Meyers',t:'HOU',p:['OF'],v:10},
+  {r:264,n:'Jake Meyers',t:'HOU',p:['OF'],v:10},
   {r:265,n:'Dominic Canzone',t:'SEA',p:['OF'],v:10},{r:266,n:'Oswaldo Cabrera',t:'NYY',p:['OF','SS','2B'],v:8},
-  {r:267,n:'Mark Vientos',t:'NYM',p:['3B','1B'],v:16},{r:268,n:'Nolan Gorman',t:'STL',p:['2B','3B'],v:16},
-  {r:269,n:'Royce Lewis',t:'MIN',p:['SS','3B'],v:18},{r:270,n:'Masyn Winn',t:'STL',p:['SS'],v:16},
-  {r:271,n:'Jorge Soler',t:'SF',p:['DH','OF'],v:18},{r:272,n:'Giancarlo Stanton',t:'NYY',p:['DH','OF'],v:16},
-  {r:273,n:'Cody Bellinger',t:'CHC',p:['OF','1B'],v:18},{r:274,n:'Byron Buxton',t:'MIN',p:['OF'],v:20},
-  {r:275,n:'Ian Happ',t:'CHC',p:['OF'],v:18},{r:276,n:'Chris Taylor',t:'LAD',p:['2B','SS','3B','OF'],v:6},
+  {r:276,n:'Chris Taylor',t:'LAD',p:['2B','SS','3B','OF'],v:6},
   {r:277,n:'Aroldis Chapman',t:'PIT',p:['RP'],v:8},{r:278,n:'Trevor Megill',t:'MIL',p:['RP'],v:8},
   {r:279,n:'Erik Swanson',t:'TOR',p:['RP'],v:6},{r:280,n:'Jordan Lyles',t:'KC',p:['SP'],v:4},
   // 2026 Yahoo Top 300 additions
@@ -1022,11 +1017,14 @@ function recBuy(idx) {
   var price = parseInt(input ? input.value : 0);
   if (isNaN(price) || price < 1) return;
   selPlayer = rec.player;
+  if (getDraftedSet().has(selPlayer.n)) { alert(selPlayer.n + ' is already drafted.'); selPlayer = null; return; }
   var slot = findSlot(selPlayer);
+  if (slot < 0) { alert('No roster slot available for ' + selPlayer.n + '.'); selPlayer = null; return; }
   var newRoster = state.roster.slice();
-  if (slot >= 0) newRoster[slot] = { player: selPlayer, price: price };
+  newRoster[slot] = { player: selPlayer, price: price };
   state.roster = newRoster;
   state.spent += price;
+  pruneNoms(selPlayer.n);
   saveState(); moneyRain(); showToast(selPlayer, price);
   selPlayer = null; updateAll(); setTimeout(runRecs, 100);
 }
@@ -1037,7 +1035,9 @@ function recOther(idx) {
   var price = parseInt(input ? input.value : 0);
   if (isNaN(price) || price < 1) return;
   var p = rec.player;
+  if (getDraftedSet().has(p.n)) { alert(p.n + ' is already drafted.'); return; }
   state.drafted = state.drafted.concat([{ n:p.n, t:p.t, p:p.p, v:p.v, r:p.r, price:price }]);
+  pruneNoms(p.n);
   saveState(); selPlayer = null; updateAll(); setTimeout(runRecs, 100);
 }
 
@@ -1059,6 +1059,10 @@ function showToast(player, price) {
   el.style.animation = 'none'; el.offsetHeight; el.style.animation = 'toastIn .3s ease-out';
   clearTimeout(el._timer);
   el._timer = setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
+function pruneNoms(playerName) {
+  state.noms = state.noms.filter(function(p) { return p.n !== playerName; });
 }
 
 function undoDraftPick(idx) {
@@ -1086,11 +1090,14 @@ function buyPlayer() {
   if (!selPlayer) return;
   const price = parseInt(document.getElementById('bidPrice').value);
   if (isNaN(price) || price < 1) return;
+  if (getDraftedSet().has(selPlayer.n)) { alert(selPlayer.n + ' is already drafted.'); return; }
   const idx = findSlot(selPlayer);
+  if (idx < 0) { alert('No roster slot available for ' + selPlayer.n + '.'); return; }
   const newRoster = [...state.roster];
-  if (idx >= 0) newRoster[idx] = { player: selPlayer, price };
+  newRoster[idx] = { player: selPlayer, price };
   state.roster = newRoster;
   state.spent += price;
+  pruneNoms(selPlayer.n);
   saveState();
   moneyRain();
   showToast(selPlayer, price);
@@ -1104,7 +1111,9 @@ function logOther() {
   if (!selPlayer) return;
   const price = parseInt(document.getElementById('bidPrice').value);
   if (isNaN(price) || price < 1) return;
+  if (getDraftedSet().has(selPlayer.n)) { alert(selPlayer.n + ' is already drafted.'); return; }
   state.drafted = [...state.drafted, { n: selPlayer.n, t: selPlayer.t, p: selPlayer.p, v: selPlayer.v, r: selPlayer.r, price }];
+  pruneNoms(selPlayer.n);
   saveState();
   selPlayer = null;
   closeSide();
@@ -1205,12 +1214,15 @@ function gutBuy() {
   if (!_gutPlayer) return;
   var price = parseInt(document.getElementById('gutBidPrice').value);
   if (isNaN(price) || price < 1) return;
+  if (getDraftedSet().has(_gutPlayer.n)) { alert(_gutPlayer.n + ' is already drafted.'); return; }
   selPlayer = _gutPlayer;
   var slot = findSlot(selPlayer);
+  if (slot < 0) { alert('No roster slot available for ' + selPlayer.n + '.'); selPlayer = null; return; }
   var newRoster = state.roster.slice();
-  if (slot >= 0) newRoster[slot] = { player: selPlayer, price: price };
+  newRoster[slot] = { player: selPlayer, price: price };
   state.roster = newRoster;
   state.spent += price;
+  pruneNoms(selPlayer.n);
   saveState(); moneyRain(); showToast(selPlayer, price);
   _gutPlayer = null; selPlayer = null; closeGut(); updateAll(); setTimeout(runRecs, 100);
 }
@@ -1220,7 +1232,9 @@ function gutOther() {
   var price = parseInt(document.getElementById('gutBidPrice').value);
   if (isNaN(price) || price < 1) return;
   var p = _gutPlayer;
+  if (getDraftedSet().has(p.n)) { alert(p.n + ' is already drafted.'); return; }
   state.drafted = state.drafted.concat([{ n:p.n, t:p.t, p:p.p, v:p.v, r:p.r, price:price }]);
+  pruneNoms(p.n);
   saveState(); _gutPlayer = null; closeGut(); updateAll(); setTimeout(runRecs, 100);
 }
 
@@ -1252,12 +1266,15 @@ function buyFromModal() {
   if (!_modalPlayer) return;
   const price = parseInt(document.getElementById('pmBidPrice').value);
   if (isNaN(price) || price < 1) return;
+  if (getDraftedSet().has(_modalPlayer.n)) { alert(_modalPlayer.n + ' is already drafted.'); return; }
   selPlayer = _modalPlayer;
   const idx = findSlot(selPlayer);
+  if (idx < 0) { alert('No roster slot available for ' + selPlayer.n + '.'); selPlayer = null; return; }
   const newRoster = [...state.roster];
-  if (idx >= 0) newRoster[idx] = { player: selPlayer, price };
+  newRoster[idx] = { player: selPlayer, price };
   state.roster = newRoster;
   state.spent += price;
+  pruneNoms(selPlayer.n);
   saveState();
   moneyRain();
   showToast(selPlayer, price);
@@ -1271,7 +1288,9 @@ function logOtherFromModal() {
   if (!_modalPlayer) return;
   const price = parseInt(document.getElementById('pmBidPrice').value);
   if (isNaN(price) || price < 1) return;
+  if (getDraftedSet().has(_modalPlayer.n)) { alert(_modalPlayer.n + ' is already drafted.'); return; }
   state.drafted = [...state.drafted, { n: _modalPlayer.n, t: _modalPlayer.t, p: _modalPlayer.p, v: _modalPlayer.v, r: _modalPlayer.r, price }];
+  pruneNoms(_modalPlayer.n);
   saveState();
   selPlayer = null;
   closePlayerModal();

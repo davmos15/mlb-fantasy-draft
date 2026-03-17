@@ -1,6 +1,6 @@
 # MLB Draft Ops — War Room
 
-A standalone, real-time MLB Fantasy Auction Draft assistant built as a single HTML file. Designed for H2H Points leagues (12-team, $260 budget).
+A standalone, real-time MLB Fantasy Auction Draft assistant built as a single HTML file. Designed for H2H Points leagues (12-team, $260 budget). Player data sourced from Yahoo 2026 Fantasy Baseball Top 300.
 
 ## Features
 
